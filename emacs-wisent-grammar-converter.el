@@ -36,256 +36,256 @@
 
 (defun emacs-wisent-grammar-converter-generate-grammar-from-filename(source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified."
-(let* ((buffer (generate-new-buffer destination)))
-  (switch-to-buffer buffer)
-  (insert-file-contents source)
+  (let* ((buffer (generate-new-buffer destination)))
+    (switch-to-buffer buffer)
+    (insert-file-contents source)
 
-  (defun reformat-logic-block (logic)
-    "Reformat LOGIC from C to elisp."
+    (defun reformat-logic-block (logic)
+      "Reformat LOGIC from C to elisp."
 
-    ;; Remove new-lines
-    (setq logic (replace-regexp-in-string "\n" " " logic))
+      ;; Remove new-lines
+      (setq logic (replace-regexp-in-string "\n" " " logic))
 
-    ;; Replace more than one space with single space
-    (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
+      ;; Replace more than one space with single space
+      (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
 
-    ;; FIXME
-    (while (string-match "$$ = $\\([0-9]+\\);" logic)
-      (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
-    logic)
+      ;; FIXME
+      (while (string-match "$$ = $\\([0-9]+\\);" logic)
+        (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
+      logic)
 
-  ;; Remove unnecessary starting and ending stuff
-  (let ((start (point))
-        (whitespace "[\t\n ]")
-        (grammar ""))
+    ;; Remove unnecessary starting and ending stuff
+    (let ((start (point))
+          (whitespace "[\t\n ]")
+          (grammar ""))
 
-    (let ((level "root")
-          (continue t)
-          (grammar "")
-          (block-start 0)
-          (block-end 0)
-          (block "")
-          (rule-start)
-          (rule-end)
-          (rule "")
-          (logic-start 0)
-          (logic-end 0)
-          (logic)
-          (parse-stack '())
-          (last-was-block-comment nil)
-          (last-was-quote nil)
-          (rule-token-count 0))
+      (let ((level "root")
+            (continue t)
+            (grammar "")
+            (block-start 0)
+            (block-end 0)
+            (block "")
+            (rule-start)
+            (rule-end)
+            (rule "")
+            (logic-start 0)
+            (logic-end 0)
+            (logic)
+            (parse-stack '())
+            (last-was-block-comment nil)
+            (last-was-quote nil)
+            (rule-token-count 0))
 
-      ;; TODO /* ... */
-      ;; TODO NULL
-      ;; TODO expr.. ;
-      ;; TODO $$ =
-      ;; TODO $$->... ;
-      ;; TODO ... ? ... :
+        ;; TODO /* ... */
+        ;; TODO NULL
+        ;; TODO expr.. ;
+        ;; TODO $$ =
+        ;; TODO $$->... ;
+        ;; TODO ... ? ... :
 
-      ;; Iterate through entire buffer starting from start
-      (goto-char start)
-      (while continue
-        (cond
+        ;; Iterate through entire buffer starting from start
+        (goto-char start)
+        (while continue
+          (cond
 
-         ((string= level "root")
-          (if (search-forward-regexp "\n+\\([a-z_]+\\)[\n\t ]*:" nil t)
+           ((string= level "root")
+            (if (search-forward-regexp "\n+\\([a-z_]+\\)[\n\t ]*:" nil t)
+
+                (progn
+                  (setq grammar (concat grammar (format "\n%s:\n    " (match-string 1))))
+                  (setq block (match-string 1))
+                  (setq rule-start (point))
+                  (setq rule "")
+                  (setq rule-token-count 0)
+                  (message "Found block '%s'" block)
+                  (setq level "block"))
 
               (progn
-                (setq grammar (concat grammar (format "\n%s:\n    " (match-string 1))))
-                (setq block (match-string 1))
-                (setq rule-start (point))
-                (setq rule "")
-                (setq rule-token-count 0)
-                (message "Found block '%s'" block)
-                (setq level "block"))
+                (message "Failed to find block-start")
+                (setq continue nil))))
 
-            (progn
-              (message "Failed to find block-start")
-              (setq continue nil))))
+           ((string= level "block")
 
-         ((string= level "block")
+            ;; Can we find a | or { or ; character?
+            (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[a-zA-Z_]+\\)" nil t)
 
-          ;; Can we find a | or { or ; character?
-          (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[a-zA-Z_]+\\)" nil t)
+                (cond
 
-              (cond
+                 ;; Is it a rule delimiter (| or ;)?
+                 ((or (string= (match-string 1) "|")
+                      (string= (match-string 1) ";"))
 
-               ;; Is it a rule delimiter (| or ;)?
-               ((or (string= (match-string 1) "|")
-                    (string= (match-string 1) ";"))
+                  (let ((matches-delimiter (string= (match-string 1) "|"))
+                        (matches-end (string= (match-string 1) ";")))
 
-                (let ((matches-delimiter (string= (match-string 1) "|"))
-                      (matches-end (string= (match-string 1) ";")))
+                    ;; Collect rule here
+                    (setq rule-end (point))
 
-                  ;; Collect rule here
+                    ;; Did last action add a new-line?
+                    (setq grammar (concat grammar rule))
+                    (setq rule "")
+
+                    ;; Is it the start of a new rule?
+                    (when matches-delimiter
+                      (setq rule-start (point))
+                      (setq rule-token-count 0)
+                      (setq grammar (concat grammar "\n    | "))
+                      (message "Found another rule in block"))
+
+                    ;; Is it the end of a block?
+                    (when matches-end
+                      (setq grammar (concat grammar "\n    ;\n"))
+                      (setq rule-token-count 0)
+                      (message "Ended block")
+                      (setq level "root"))))
+
+                 ;; Is it a logic start delimiter?
+                 ((string= (match-string 1) "{")
                   (setq rule-end (point))
+                  (if (> rule-token-count 0)
+                      (setq rule (concat rule " "))
+                    (setq rule (concat rule "\n    ")))
+                  (setq rule (concat rule "("))
+                  (setq last-was-block-comment nil)
+                  (setq last-was-quote nil)
+                  (setq logic-start (point))
+                  (setq level "logic"))
 
-                  ;; Did last action add a new-line?
-                  (setq grammar (concat grammar rule))
-                  (setq rule "")
-
-                  ;; Is it the start of a new rule?
-                  (when matches-delimiter
-                    (setq rule-start (point))
-                    (setq rule-token-count 0)
-                    (setq grammar (concat grammar "\n    | "))
-                    (message "Found another rule in block"))
-
-                  ;; Is it the end of a block?
-                  (when matches-end
-                    (setq grammar (concat grammar "\n    ;\n"))
-                    (setq rule-token-count 0)
-                    (message "Ended block")
-                    (setq level "root"))))
-
-               ;; Is it a logic start delimiter?
-               ((string= (match-string 1) "{")
-                (setq rule-end (point))
-                (if (> rule-token-count 0)
-                    (setq rule (concat rule " "))
-                  (setq rule (concat rule "\n    ")))
-                (setq rule (concat rule "("))
-                (setq last-was-block-comment nil)
-                (setq last-was-quote nil)
-                (setq logic-start (point))
-                (setq level "logic"))
-
-               ;; Is it a single-quote?
-               ((string= (match-string 1) "'")
-                (let ((quote-start (point))
-                      (quote-end)
-                      (quote))
-                  (if (search-forward-regexp "\'" nil t)
+                 ;; Is it a single-quote?
+                 ((string= (match-string 1) "'")
+                  (let ((quote-start (point))
+                        (quote-end)
+                        (quote))
+                    (if (search-forward-regexp "\'" nil t)
+                        (progn
+                          (setq quote-end (point))
+                          (setq rule-start quote-end)
+                          (setq quote (string-trim (buffer-substring (- quote-start 1) quote-end)))
+                          (when (> rule-token-count 0)
+                            (setq rule (concat rule " ")))
+                          (setq rule (concat rule quote))
+                          (setq last-was-quote t)
+                          (setq rule-token-count (+ rule-token-count 1)))
                       (progn
-                        (setq quote-end (point))
-                        (setq rule-start quote-end)
-                        (setq quote (string-trim (buffer-substring (- quote-start 1) quote-end)))
-                        (when (> rule-token-count 0)
-                          (setq rule (concat rule " ")))
-                        (setq rule (concat rule quote))
-                        (setq last-was-quote t)
-                        (setq rule-token-count (+ rule-token-count 1)))
-                    (progn
-                      (message "Failed to find ending single-quote")
-                      (setq continue nil)))))
+                        (message "Failed to find ending single-quote")
+                        (setq continue nil)))))
 
-               ;; Is it a double-quote?
-               ((string= (match-string 1) "\"")
-                (let ((quote-start (point))
-                      (quote-end)
-                      (quote))
-                  (if (search-forward-regexp "\"" nil t)
+                 ;; Is it a double-quote?
+                 ((string= (match-string 1) "\"")
+                  (let ((quote-start (point))
+                        (quote-end)
+                        (quote))
+                    (if (search-forward-regexp "\"" nil t)
+                        (progn
+                          (setq quote-end (point))
+                          (setq rule-start quote-end)
+                          (setq quote (string-trim (buffer-substring (- quote-start 1) quote-end 1)))
+                          (when (> rule-token-count 0)
+                            (setq rule (concat rule " ")))
+                          (setq rule (concat rule quote))
+                          (setq last-was-quote t)
+                          (setq rule-token-count (+ rule-token-count 1)))
                       (progn
-                        (setq quote-end (point))
-                        (setq rule-start quote-end)
-                        (setq quote (string-trim (buffer-substring (- quote-start 1) quote-end 1)))
-                        (when (> rule-token-count 0)
-                          (setq rule (concat rule " ")))
-                        (setq rule (concat rule quote))
-                        (setq last-was-quote t)
-                        (setq rule-token-count (+ rule-token-count 1)))
-                    (progn
-                      (message "Failed to find ending double-quote")
-                      (setq continue nil)))))
+                        (message "Failed to find ending double-quote")
+                        (setq continue nil)))))
 
-               ;; Is it a logic end delimiter?
-               ((string= (match-string 1) "}")
-                (message "Invalid grammar, breaking")
+                 ;; Is it a logic end delimiter?
+                 ((string= (match-string 1) "}")
+                  (message "Invalid grammar, breaking")
+                  (setq continue nil))
+
+                 ;; Is it a Cdoc comment block start
+                 ((string= (match-string 1) "/*")
+                  (let ((comment-start (point))
+                        (comment-end)
+                        (comment))
+                    (if (search-forward-regexp "*/" nil t)
+                        (progn
+                          (setq comment-end (point))
+                          (setq comment (string-trim (buffer-substring comment-start (- comment-end 2))))
+                          (setq rule (concat rule ";; " (string-trim comment)))
+                          (setq rule-start comment-end)
+                          (setq last-was-block-comment t))
+                      (progn
+                        (message "Failed to find ending doc comment block")
+                        (setq continue nil)))))
+
+                 (t (progn
+                      (when (> rule-token-count 0)
+                        (setq rule (concat rule " ")))
+                      (setq rule (concat rule (match-string 1)))
+                      (setq last-was-quote nil)
+                      (setq last-was-block-comment nil)
+                      (setq rule-token-count (+ rule-token-count 1))))
+                 
+                 )
+              
+
+              (progn
+                (message "Failed to find rule delimiter")
+                (setq continue nil))))
+
+           ((string= level "logic")
+
+            ;; Can we find a { or } character?
+            (if (search-forward-regexp "\\({\\|}\\)" nil t)
+
+                (cond
+
+                 ((string= (match-string 1) "}")
+                  (setq logic-end (point))
+                  (setq logic (string-trim (buffer-substring logic-start (- logic-end 1))))
+
+                  (setq logic (reformat-logic-block logic))
+                  
+                  (setq rule (concat rule logic ")"))
+
+                  (let ((previous (pop parse-stack)))
+                    ;; Do we have a parse-stack?
+                    (if previous
+                        (setq logic-start (point))
+                      (progn
+                        (setq rule-start (point))
+                        (setq level "block")))))
+
+                 ;; Is it the start of nested logic?
+                 ((string= (match-string 1) "{")
+                  (setq logic-end (point))
+                  (setq logic (string-trim (buffer-substring logic-start (- logic-end 1))))
+                  (setq rule (concat rule " (" logic))
+                  (push (list logic-start logic-end) parse-stack)
+                  (setq logic-start (point)))
+
+                 )
+
+              (progn
+                (message "Failed to find logic end")
                 (setq continue nil))
 
-               ;; Is it a Cdoc comment block start
-               ((string= (match-string 1) "/*")
-                (let ((comment-start (point))
-                      (comment-end)
-                      (comment))
-                  (if (search-forward-regexp "*/" nil t)
-                      (progn
-                        (setq comment-end (point))
-                        (setq comment (string-trim (buffer-substring comment-start (- comment-end 2))))
-                        (setq rule (concat rule ";; " (string-trim comment)))
-                        (setq rule-start comment-end)
-                        (setq last-was-block-comment t))
-                    (progn
-                      (message "Failed to find ending doc comment block")
-                      (setq continue nil)))))
+              ))
 
-               (t (progn
-                    (when (> rule-token-count 0)
-                      (setq rule (concat rule " ")))
-                    (setq rule (concat rule (match-string 1)))
-                    (setq last-was-quote nil)
-                    (setq last-was-block-comment nil)
-                    (setq rule-token-count (+ rule-token-count 1))))
-               
-               )
-            
+           (t (setq continue nil))
 
-            (progn
-              (message "Failed to find rule delimiter")
-              (setq continue nil))))
+           ))
 
-         ((string= level "logic")
+        (delete-region (point-min) (point-max))
 
-          ;; Can we find a { or } character?
-          (if (search-forward-regexp "\\({\\|}\\)" nil t)
+        ;; Prepend header if specified
+        (when (boundp header)
+          (insert-file-contents header))
 
-              (cond
+        (goto-char (point-max))
 
-               ((string= (match-string 1) "}")
-                (setq logic-end (point))
-                (setq logic (string-trim (buffer-substring logic-start (- logic-end 1))))
+        (insert "\n\n;; NOTE Generated grammar starts here\n\n")
+        (insert grammar)
+        (insert "\n\n;; NOTE Generated grammar ends here")
 
-                (setq logic (reformat-logic-block logic))
-                
-                (setq rule (concat rule logic ")"))
-
-                (let ((previous (pop parse-stack)))
-                  ;; Do we have a parse-stack?
-                  (if previous
-                      (setq logic-start (point))
-                    (progn
-                      (setq rule-start (point))
-                      (setq level "block")))))
-
-               ;; Is it the start of nested logic?
-               ((string= (match-string 1) "{")
-                (setq logic-end (point))
-                (setq logic (string-trim (buffer-substring logic-start (- logic-end 1))))
-                (setq rule (concat rule " (" logic))
-                (push (list logic-start logic-end) parse-stack)
-                (setq logic-start (point)))
-
-               )
-
-            (progn
-              (message "Failed to find logic end")
-              (setq continue nil))
-
-            ))
-
-         (t (setq continue nil))
-
-         ))
-
-      (delete-region (point-min) (point-max))
-
-      ;; Prepend header if specified
-      (when (boundp header)
-        (insert-file-contents header))
-
-      (goto-char (point-max))
-
-      (insert "\n\n;; NOTE Generated grammar starts here\n\n")
-      (insert grammar)
-      (insert "\n\n;; NOTE Generated grammar ends here")
-
-      ;; Untabify and clean-up white-spaces
-      (untabify (point-min) (point-max))
-      (whitespace-cleanup)
+        ;; Untabify and clean-up white-spaces
+        (untabify (point-min) (point-max))
+        (whitespace-cleanup)
 
 
-      )))
+        )))
 
   )
 
