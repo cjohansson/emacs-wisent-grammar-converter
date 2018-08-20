@@ -34,13 +34,7 @@
 
 (require 'subr-x)
 
-(defun emacs-wisent-grammar-converter-generate-grammar-from-filename(source destination &optional header)
-  "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified."
-  (let* ((buffer (generate-new-buffer destination)))
-    (switch-to-buffer buffer)
-    (insert-file-contents source)
-
-    (defun reformat-logic-block (logic)
+(defun emacs-wisent-grammar/reformat-logic-block (logic)
       "Reformat LOGIC from C to elisp."
 
       ;; Remove new-lines
@@ -53,6 +47,12 @@
       (while (string-match "$$ = $\\([0-9]+\\);" logic)
         (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
       logic)
+
+(defun emacs-wisent-grammar-converter-generate-grammar-from-filename(source destination &optional header)
+  "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."
+  (let* ((buffer (generate-new-buffer destination)))
+    (switch-to-buffer buffer)
+    (insert-file-contents source)
 
     ;; Remove unnecessary starting and ending stuff
     (let ((start (point))
@@ -236,7 +236,7 @@
                   (setq logic-end (point))
                   (setq logic (string-trim (buffer-substring logic-start (- logic-end 1))))
 
-                  (setq logic (reformat-logic-block logic))
+                  (setq logic (emacs-wisent-grammar/reformat-logic-block logic))
                   
                   (setq rule (concat rule logic ")"))
 
@@ -268,6 +268,7 @@
 
            ))
 
+        ;; Clear buffer
         (delete-region (point-min) (point-max))
 
         ;; Prepend header if specified
@@ -284,10 +285,12 @@
         (untabify (point-min) (point-max))
         (whitespace-cleanup)
 
+        ;; Return current buffer as string
+        (let ((return (buffer-string)))
+          (kill-buffer buffer)
+          return)
 
-        )))
-
-  )
+        ))))
 
 
 (provide 'emacs-wisent-grammar-converter)
