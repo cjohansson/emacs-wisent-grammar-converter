@@ -21,8 +21,7 @@ After a while I though maybe other people could find this useful as well so I st
 
 ;; Change YACC definition paths here
 (let* ((source "~/Documents/php-src/Zend/zend_language_parser.y")
-       (header "phps-automation-header.wy")
        (destination "zend_language_parser.wy"))
-  (emacs-wisent-grammar-converter/generate-grammar-from-filename source destination header))
+  (emacs-wisent-grammar-converter/generate-grammar-from-filename source destination))
 ```
 

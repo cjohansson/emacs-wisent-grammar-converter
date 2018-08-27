@@ -272,12 +272,14 @@
         (delete-region (point-min) (point-max))
 
         ;; Prepend header if specified
-        (when (boundp 'header)
+        (when (and (boundp 'header)
+                   header)
+          (insert "\n\n")
           (insert-file-contents header))
 
         (goto-char (point-max))
 
-        (insert "\n\n;; NOTE Generated grammar starts here\n\n")
+        (insert ";; NOTE Generated grammar starts here\n\n")
         (insert grammar)
         (insert "\n\n;; NOTE Generated grammar ends here")
 
