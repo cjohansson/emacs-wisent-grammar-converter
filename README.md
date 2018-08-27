@@ -11,3 +11,20 @@ After a while I though maybe other people could find this useful as well so I st
 ## Main Goal
 
 1. Convert PHP Language YACC Grammar to valid Wisent Grammar
+
+## Usage
+
+``` emacs-lisp
+;; Your source path here
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/emacs-wisent-grammar-converter/"))
+(require 'emacs-wisent-grammar-converter)
+
+;; Change YACC definition paths here
+(let* ((source "~/Documents/php-src/Zend/zend_language_parser.y")
+       (header "phps-automation-header.wy")
+       (destination "zend_language_parser.wy")
+       (buffer (generate-new-buffer destination)))
+  (switch-to-buffer buffer)
+  (insert (emacs-wisent-grammar-converter/generate-grammar-from-filename source destination header)))
+```
+
