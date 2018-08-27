@@ -48,7 +48,7 @@
         (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
       logic)
 
-(defun emacs-wisent-grammar-converter-generate-grammar-from-filename(source destination &optional header)
+(defun emacs-wisent-grammar-converter/generate-grammar-from-filename(source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
     (switch-to-buffer buffer)
@@ -272,7 +272,7 @@
         (delete-region (point-min) (point-max))
 
         ;; Prepend header if specified
-        (when (boundp header)
+        (when (boundp 'header)
           (insert-file-contents header))
 
         (goto-char (point-max))
