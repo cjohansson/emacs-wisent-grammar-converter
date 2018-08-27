@@ -1,6 +1,6 @@
 # Emacs Wisent Grammar Converter
 
-As a first goal this project is about creating Elisp functions that convert Yacc parser-generator grammar into Wisent. In the future maybe more parser generator grammars could be supported as well.
+As a first goal this project is about creating Elisp functions that convert YACC parser-generator grammar into Wisent. In the future maybe more parser generator grammars could be supported as well.
 
 ## The problem
 
@@ -22,9 +22,7 @@ After a while I though maybe other people could find this useful as well so I st
 ;; Change YACC definition paths here
 (let* ((source "~/Documents/php-src/Zend/zend_language_parser.y")
        (header "phps-automation-header.wy")
-       (destination "zend_language_parser.wy")
-       (buffer (generate-new-buffer destination)))
-  (switch-to-buffer buffer)
-  (insert (emacs-wisent-grammar-converter/generate-grammar-from-filename source destination header)))
+       (destination "zend_language_parser.wy"))
+  (emacs-wisent-grammar-converter/generate-grammar-from-filename source destination header))
 ```
 

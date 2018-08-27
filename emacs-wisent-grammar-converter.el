@@ -286,9 +286,7 @@
         (whitespace-cleanup)
 
         ;; Return current buffer as string
-        (let ((return (buffer-string)))
-          (kill-buffer buffer)
-          return)
+        (buffer-string)
 
         ))))
 
