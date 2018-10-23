@@ -35,20 +35,20 @@
 (require 'subr-x)
 
 (defun emacs-wisent-grammar/reformat-logic-block (logic)
-      "Reformat LOGIC from C to elisp."
+  "Reformat LOGIC from C to elisp."
 
-      ;; Remove new-lines
-      (setq logic (replace-regexp-in-string "\n" " " logic))
+  ;; Remove line-feeds and carriage returns
+  (setq logic (replace-regexp-in-string "\\(\n\\|\r\\)+" " " logic t))
 
-      ;; Replace more than one space with single space
-      (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
+  ;; Replace more than one space with single space
+  (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic t))
 
-      ;; FIXME
-      (while (string-match "$$ = $\\([0-9]+\\);" logic)
-        (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
-      logic)
+  ;; FIXME
+  (while (string-match "$$ = $\\([0-9]+\\);" logic)
+    (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
+  logic)
 
-(defun emacs-wisent-grammar-converter/generate-grammar-from-filename(source destination &optional header)
+(defun emacs-wisent-grammar-converter/generate-grammar-from-filename (source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
     (switch-to-buffer buffer)
