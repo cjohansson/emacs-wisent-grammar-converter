@@ -46,7 +46,8 @@
   ;; FIXME
   (while (string-match "$$ = $\\([0-9]+\\);" logic)
     (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
-  logic)
+
+  (string-trim logic))
 
 (defun emacs-wisent-grammar-converter/generate-grammar-from-filename (source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."

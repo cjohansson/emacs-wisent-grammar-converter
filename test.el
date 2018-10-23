@@ -39,7 +39,7 @@
 (require 'emacs-wisent-grammar-converter)
 (require 'ert)
 
-(should (equal "random-statement = '200'; " (emacs-wisent-grammar/reformat-logic-block "	random-statement  =      '200';  	\n\n")))
+(should (equal "random-statement = '200';" (emacs-wisent-grammar/reformat-logic-block "	random-statement  =      '200';  	\n\n")))
 
 (provide 'emacs-wisent-grammar-converter-test)
 ;;; test.el ends here
