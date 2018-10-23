@@ -1,4 +1,4 @@
-;;; emacs-wisent-grammar-converter.el --- Emacs Wisent Grammar Converter
+;;; emacs-wisent-grammar-converter.el --- Emacs Wisent Grammar Converter  -*- lexical-binding:t -*-
 
 ;; Author: Christian Johansson <github.com/cjohansson>
 ;; Maintainer: Christian Johansson <github.com/cjohansson>
@@ -31,6 +31,7 @@
 ;;; Commentary:
 
 ;;; Code:
+
 
 (require 'subr-x)
 

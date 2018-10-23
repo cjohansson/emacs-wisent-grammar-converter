@@ -1,4 +1,4 @@
-;;; test.el --- Tests for Emacs Wisent Grammar Converter
+;;; test.el --- Tests for Emacs Wisent Grammar Converter -*- lexical-binding:t -*-
 
 ;; Author: Christian Johansson <github.com/cjohansson>
 ;; Maintainer: Christian Johansson <github.com/cjohansson>
@@ -40,6 +40,8 @@
 (require 'ert)
 
 (should (equal "random-statement = '200';" (emacs-wisent-grammar/reformat-logic-block "	random-statement  =      '200';  	\n\n")))
+
+(message "Unit tests completed")
 
 (provide 'emacs-wisent-grammar-converter-test)
 ;;; test.el ends here
