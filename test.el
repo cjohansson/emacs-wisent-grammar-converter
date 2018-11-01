@@ -39,7 +39,14 @@
 (require 'emacs-wisent-grammar-converter)
 (require 'ert)
 
+(message " ")
+(message "Unit tests started")
+
+;; White-space
 (should (equal "random-statement = '200';" (emacs-wisent-grammar/reformat-logic-block "	random-statement  =      '200';  	\n\n")))
+
+
+(should (equal "$1" (emacs-wisent-grammar/reformat-logic-block "  $$ = $1;  	\n\n")))
 
 (message "Unit tests completed")
 
