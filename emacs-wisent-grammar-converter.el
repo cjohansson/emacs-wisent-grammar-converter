@@ -50,11 +50,18 @@
   (while (string-match "$$ = $\\([0-9]+\\);" logic)
     (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
 
+  ;; Transform statements like    $$ = (zend    into    (zend
+  (while (string-match "$$ = \\(([a-zA-Z_]\\)" logic)
+    (setq logic (replace-match (format "%s" (match-string 1 logic)) t t logic)))
+
   ;; Replace comma with space
   (setq logic (replace-regexp-in-string ",\\ +" " " logic))
 
   ;; Replace semi-colon with nothing
   (setq logic (replace-regexp-in-string ";" "" logic))
+
+  ;; Replace NULL with nil
+  (setq logic (replace-regexp-in-string "NULL" "nil" logic t t))
 
   (emacs-wisent-grammar-converter/string-trim logic))
 
