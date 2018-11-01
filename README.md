@@ -1,6 +1,6 @@
 # Emacs Wisent Grammar Converter
 
-As a first goal this project is about creating Elisp functions that convert Yacc parser-generator grammar into Wisent. In the future maybe more parser generator grammars could be supported as well.
+As a first goal this project is about creating elisp functions that convert Yacc parser-generator grammar into Wisent. In the future maybe more parser generator grammars could be supported as well.
 
 ## The problem
 
@@ -12,21 +12,21 @@ After a while I though maybe other people could find this useful as well so I st
 
 1. Convert PHP Language Yacc Grammar to valid Wisent Grammar
 
-## Usage
+## Example conversion of PHP Yacc
 
 ``` emacs-lisp
 ;; Your source path here
 (add-to-list 'load-path (expand-file-name "~/.emacs.d/emacs-wisent-grammar-converter/"))
 (require 'emacs-wisent-grammar-converter)
 
-;; Change YACC definition paths here
+;; Change Yacc definition paths here
 (let ((php-yacc-url "https://raw.githubusercontent.com/php/php-src/master/Zend/zend_language_parser.y")
       (php-yacc-file (expand-file-name "zend_language_parser.y"))
       (wisent-destination (expand-file-name "zend_language_parser.wy")))
 
-  ;; Download YACC if not available
+  ;; Download Yacc if not available
   (unless (file-exists-p php-yacc-file)
-    (message "Download PHP YACC file..")
+    (message "Downloading PHP Yacc grammar..")
     (url-copy-file php-yacc-url php-yacc-file t t)
     (message "Downlad completed"))
 
