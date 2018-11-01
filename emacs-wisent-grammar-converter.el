@@ -37,14 +37,24 @@
   "Reformat LOGIC from C to elisp."
 
   ;; Remove line-feeds and carriage returns
-  (setq logic (replace-regexp-in-string "\\(\n\\|\r\\)+" " " logic t))
+  (setq logic (replace-regexp-in-string "\\(\n\\|\r\\)+" " " logic))
 
   ;; Replace more than one space with single space
-  (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic t))
+  (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
 
-  ;; FIXME
+  ;; Transform statements like    zend(a, b, c)    into    (zend a b c)
+  (while (string-match "\\([a-zA-Z_]+\\)(\\([^)]+\\))" logic)
+    (setq logic (replace-match (format "(%s %s)" (match-string 1 logic) (match-string 2 logic)) t t logic)))
+
+  ;; Transform statements like    $$ = $1;    into    $1
   (while (string-match "$$ = $\\([0-9]+\\);" logic)
     (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
+
+  ;; Replace comma with space
+  (setq logic (replace-regexp-in-string ",\\ +" " " logic))
+
+  ;; Replace semi-colon with nothing
+  (setq logic (replace-regexp-in-string ";" "" logic))
 
   (emacs-wisent-grammar-converter/string-trim logic))
 

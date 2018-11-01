@@ -43,10 +43,17 @@
 (message "Unit tests started")
 
 ;; White-space
-(should (equal "random-statement = '200';" (emacs-wisent-grammar/reformat-logic-block "	random-statement  =      '200';  	\n\n")))
+(should (equal "random-statement" (emacs-wisent-grammar/reformat-logic-block "	random-statement;  	\n\n")))
 
+;; Return a argument
+(should (equal "$3" (emacs-wisent-grammar/reformat-logic-block "  $$ = $3;  	\n\n")))
 
-(should (equal "$1" (emacs-wisent-grammar/reformat-logic-block "  $$ = $1;  	\n\n")))
+;; Function calls
+(should (equal "(zend_ast_create ZEND_AST_EMPTY $3)" (emacs-wisent-grammar/reformat-logic-block "  zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
+
+;; TODO Assignments
+
+;; TODO Return function call
 
 (message "Unit tests completed")
 
