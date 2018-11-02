@@ -43,8 +43,10 @@
   (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
 
   ;; Transform statements like    zend(a, b, c)    into    (zend a b c)
-  (while (string-match "\\([a-zA-Z_]+\\)(\\([^)]+\\))" logic)
-    (setq logic (replace-match (format "(%s %s)" (match-string 1 logic) (match-string 2 logic)) t t logic)))
+  (while (string-match "\\([a-zA-Z_]+\\)(\\([^)]*\\))" logic)
+    (if (string= (match-string 2 logic) "")
+        (setq logic (replace-match (format "(%s)" (match-string 1 logic)) t t logic))
+      (setq logic (replace-match (format "(%s %s)" (match-string 1 logic) (match-string 2 logic)) t t logic))))
 
   ;; Transform statements like    $$ = $1;    into    $1
   (while (string-match "$$ = $\\([0-9]+\\);" logic)
@@ -59,6 +61,10 @@
 
   ;; Replace semi-colon with nothing
   (setq logic (replace-regexp-in-string ";" "" logic))
+
+  ;; Transform doc block comments    /* blaha */ to \n;; blaha\n
+  (while (string-match "/\\*\\(.+\\)\\*/" logic)
+    (setq logic (replace-match (format "\n;;%s\n" (match-string 1 logic)) t t logic)))
 
   ;; Replace NULL with nil
   (setq logic (replace-regexp-in-string "NULL" "nil" logic t t))

@@ -55,7 +55,7 @@
 (should (equal "(zend_ast_create)" (emacs-wisent-grammar/reformat-logic-block "  zend_ast_create();  	\n\n")))
 
 ;; NULL values like    ($$ = NULL)
-(should (equal "nil" (emacs-wisent-grammar/reformat-logic-block "  $$ = NULL;  	\n\n")))
+(should (equal "$$ = nil" (emacs-wisent-grammar/reformat-logic-block "  $$ = NULL;  	\n\n")))
 
 ;; TODO Assignments like    $$->attr = ZEND_BIND_REF
 
@@ -63,7 +63,8 @@
 
 ;; TODO Logical or like    $1 | $2
 
-;; TODO Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
+;; Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
+(should (equal ";; allow single trailing comma\n(zend_ast_list_rtrim $1)" (emacs-wisent-grammar/reformat-logic-block "/* allow single trailing comma */ (zend_ast_list_rtrim $1)")))
 
 ;; Return function call
 (should (equal "(zend_ast_create ZEND_AST_EMPTY $3)" (emacs-wisent-grammar/reformat-logic-block "  $$ = zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
