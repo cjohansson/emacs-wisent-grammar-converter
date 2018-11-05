@@ -56,6 +56,10 @@
   (while (string-match "$$ = \\(([a-zA-Z_]\\)" logic)
     (setq logic (replace-match (format "%s" (match-string 1 logic)) t t logic)))
 
+  ;; Transform statements like    $$->attr = ZEND_NAME_NOT_FQ;    into    (put $$ 'attr 'ZEND_NAME_NOT_FQ)
+  (while (string-match "\\([\$a-zA-Z0-9]+\\)->\\([a-zA-Z0-9]+\\)[\\ ]*=[\\ ]*\\([^;]+\\);" logic)
+    (setq logic (replace-match (format "(put %s '%s '%s)" (match-string 1 logic) (match-string 2 logic) (match-string 3 logic)) t t logic)))
+
   ;; Replace comma with space
   (setq logic (replace-regexp-in-string ",\\ +" " " logic))
 
@@ -83,6 +87,10 @@
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
+;; TODO Handle things like method_body:
+    ;; ';';; abstract method ($$ = nil)
+    ;; | '{' inner_statement_list '}' ($2)
+    ;; ;
 
 (defun emacs-wisent-grammar-converter/generate-grammar-from-filename (source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."

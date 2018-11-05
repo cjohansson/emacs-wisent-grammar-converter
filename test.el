@@ -57,11 +57,18 @@
 ;; NULL values like    ($$ = NULL)
 (should (equal "$$ = nil" (emacs-wisent-grammar/reformat-logic-block "  $$ = NULL;  	\n\n")))
 
-;; TODO Assignments like    $$->attr = ZEND_BIND_REF
+;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+(should (equal "(put $$ 'attr 'ZEND_NAME_NOT_FQ)" (emacs-wisent-grammar/reformat-logic-block "  $$->attr = ZEND_NAME_NOT_FQ;  	\n\n")))
 
 ;; TODO Syntactic sugar like    1 ? 2 : 0
 
 ;; TODO Logical or like    $1 | $2
+
+;; TODO Function assignments like     (CG extra_fn_flags) = 0
+
+;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR)
+
+;; TODO Dereferenced pointers like    (zend_ast *decl
 
 ;; Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
 (should (equal ";; allow single trailing comma\n(zend_ast_list_rtrim $1)" (emacs-wisent-grammar/reformat-logic-block "/* allow single trailing comma */ (zend_ast_list_rtrim $1)")))
