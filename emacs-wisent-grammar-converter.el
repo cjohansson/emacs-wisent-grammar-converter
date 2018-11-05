@@ -87,11 +87,6 @@
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
-;; TODO Handle things like method_body:
-    ;; ';';; abstract method ($$ = nil)
-    ;; | '{' inner_statement_list '}' ($2)
-    ;; ;
-
 (defun emacs-wisent-grammar-converter/generate-grammar-from-filename (source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
@@ -115,19 +110,14 @@
           (last-was-quote nil)
           (rule-token-count 0))
 
-      ;; TODO /* ... */
-      ;; TODO NULL
-      ;; TODO expr.. ;
-      ;; TODO $$ =
-      ;; TODO $$->... ;
-      ;; TODO ... ? ... :
-
       ;; Iterate through entire buffer starting from start
       (goto-char start)
       (while continue
-        (cond
+        (pcase level
 
-         ((string= level "root")
+          ("root"
+
+           ;; Can we find something like    abc_def:
           (if (search-forward-regexp "\n+\\([a-z_]+\\)[\n\t ]*:" nil t)
 
               (progn
@@ -143,7 +133,7 @@
               (message "Failed to find block-start")
               (setq continue nil))))
 
-         ((string= level "block")
+         ("block"
 
           ;; Can we find a | or { or ; character?
           (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[a-zA-Z_]+\\)" nil t)
@@ -242,7 +232,7 @@
                       (progn
                         (setq comment-end (point))
                         (setq comment (emacs-wisent-grammar-converter/string-trim (buffer-substring comment-start (- comment-end 2))))
-                        (setq rule (concat rule ";; " (emacs-wisent-grammar-converter/string-trim comment)))
+                        (setq rule (concat rule " ;; " (emacs-wisent-grammar-converter/string-trim comment) "\n   "))
                         (setq rule-start comment-end)
                         (setq last-was-block-comment t))
                     (progn
@@ -264,7 +254,7 @@
               (message "Failed to find rule delimiter")
               (setq continue nil))))
 
-         ((string= level "logic")
+         ("logic"
 
           ;; Can we find a { or } character?
           (if (search-forward-regexp "\\({\\|}\\)" nil t)
@@ -303,7 +293,7 @@
 
             ))
 
-         (t (setq continue nil))
+         (_ (setq continue nil))
 
          ))
 
