@@ -171,7 +171,7 @@
                ;; Is it a logic start delimiter?
                ((string= (match-string 1) "{")
                 (setq rule-end (point))
-                (if (> rule-token-count 0)
+                (if (and (> rule-token-count 0) (not last-was-block-comment))
                     (setq rule (concat rule " "))
                   (setq rule (concat rule "\n    ")))
                 (setq rule (concat rule "("))
@@ -232,7 +232,9 @@
                       (progn
                         (setq comment-end (point))
                         (setq comment (emacs-wisent-grammar-converter/string-trim (buffer-substring comment-start (- comment-end 2))))
-                        (setq rule (concat rule " ;; " (emacs-wisent-grammar-converter/string-trim comment) "\n   "))
+                        (when (> rule-token-count 0)
+                          (setq rule (concat rule " ")))
+                        (setq rule (concat rule ";; " (emacs-wisent-grammar-converter/string-trim comment)))
                         (setq rule-start comment-end)
                         (setq last-was-block-comment t))
                     (progn
