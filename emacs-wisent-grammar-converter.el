@@ -70,6 +70,10 @@
   (while (string-match "/\\*\\(.+\\)\\*/" logic)
     (setq logic (replace-match (format "\n;;%s\n" (match-string 1 logic)) t t logic)))
 
+  ;; Transform logical or operators    $1|$2    to    (or $1 $2))
+  (while (string-match "\\(\\$[0-9]+\\)[\\ ]*|[\\ ]*\\(\\$[0-9]+\\)" logic)
+    (setq logic (replace-match (format "(or %s %s)" (match-string 1 logic) (match-string 2 logic)) t t logic)))
+
   ;; Replace NULL with nil
   (setq logic (replace-regexp-in-string "NULL" "nil" logic t t))
 
