@@ -63,7 +63,7 @@
 ;; TODO Syntactic sugar like    1 ? 2 : 0
 
 ;; Logical or like    $1 | $2
-(should (equal "(or $1 $2)" (emacs-wisent-grammar/reformat-logic-block "  $1 | $2  	\n\n")))
+(should (equal "(logior $1 $2)" (emacs-wisent-grammar/reformat-logic-block "  $1 | $2  	\n\n")))
 
 ;; TODO Function assignments like     (CG extra_fn_flags) = 0
 
