@@ -1,4 +1,4 @@
-;;; test.el --- Tests for Emacs Wisent Grammar Converter -*- lexical-binding:t -*-
+;;; emacs-wisent-grammar-converter-test.el --- Tests for Emacs Wisent Grammar Converter -*- lexical-binding:t -*-
 
 ;; Copyright (C) 2018-2019 Christian Johansson
 
@@ -74,4 +74,4 @@
 (message "Unit tests completed")
 
 (provide 'emacs-wisent-grammar-converter-test)
-;;; test.el ends here
+;;; emacs-wisent-grammar-converter-test.el ends here
