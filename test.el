@@ -1,14 +1,6 @@
 ;;; test.el --- Tests for Emacs Wisent Grammar Converter -*- lexical-binding:t -*-
 
-;; Author: Christian Johansson <github.com/cjohansson>
-;; Maintainer: Christian Johansson <github.com/cjohansson>
-;; Created: 9 Aug 2018
-;; Modified: .
-;; Version: 0.1
-;; Keywords: tools, convenience
-;; URL: -
-
-;; Copyright (C) 2018 Christian Johansson
+;; Copyright (C) 2018-2019 Christian Johansson
 
 ;; This file is not part of GNU Emacs.
 
@@ -29,7 +21,6 @@
 
 
 ;;; Commentary:
-
 
 ;; Run from terminal with `make test'
 
@@ -54,13 +45,15 @@
 ;; Function calls without arguments
 (should (equal "(zend_ast_create)" (emacs-wisent-grammar/reformat-logic-block "  zend_ast_create();  	\n\n")))
 
-;; NULL values like    ($$ = NULL)
+;; NULL values like    ($$ = NULLABLE)
 (should (equal "$$ = nil" (emacs-wisent-grammar/reformat-logic-block "  $$ = NULL;  	\n\n")))
 
 ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
 (should (equal "(put $$ 'attr 'ZEND_NAME_NOT_FQ)" (emacs-wisent-grammar/reformat-logic-block "  $$->attr = ZEND_NAME_NOT_FQ;  	\n\n")))
 
 ;; TODO Syntactic sugar like    1 ? 2 : 0
+
+;; TODO Place return statements last in block    $$ = ...
 
 ;; Logical or like    $1 | $2
 (should (equal "(logior $1 $2)" (emacs-wisent-grammar/reformat-logic-block "  $1 | $2  	\n\n")))

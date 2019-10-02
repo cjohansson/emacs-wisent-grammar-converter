@@ -1,14 +1,16 @@
 ;;; emacs-wisent-grammar-converter.el --- Emacs Wisent Grammar Converter  -*- lexical-binding:t -*-
 
-;; Author: Christian Johansson <github.com/cjohansson>
-;; Maintainer: Christian Johansson <github.com/cjohansson>
+;; Author: Christian Johansson <christian@cvj.se>
+;; Maintainer: Christian Johansson <christian@cvj.se>
 ;; Created: 9 Aug 2018
-;; Modified: .
-;; Version: 0.1
+;; Modified: 2 Oct 2019
+;; Version: 0.2
 ;; Keywords: tools, convenience
-;; URL: -
+;; URL: https://github.com/cjohansson/emacs-wisent-grammar-converter
 
-;; Copyright (C) 2018 Christian Johansson
+;; Package-Requires: ((emacs "24"))
+
+;; Copyright (C) 2018-2019 Christian Johansson
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,13 +29,14 @@
 ;; Free Spathoftware Foundation, Inc., 59 Temple Place - Suite 330,
 ;; Boston, MA 02111-1307, USA.
 
-
 ;;; Commentary:
+
+;; This project converts a Bison YACC grammar into a Wisent grammar.
 
 ;;; Code:
 
 
-(defun emacs-wisent-grammar/reformat-logic-block (logic)
+(defun emacs-wisent-grammar-converter-reformat-logic-block (logic)
   "Reformat LOGIC from C to elisp."
 
   ;; Remove line-feeds and carriage returns
@@ -75,23 +78,23 @@
     (setq logic (replace-match (format "(logior %s %s)" (match-string 1 logic) (match-string 2 logic)) t t logic)))
 
   ;; Replace NULL with nil
-  (setq logic (replace-regexp-in-string "NULL" "nil" logic t t))
+  (setq logic (replace-regexp-in-string "NULL\\(?:[^A-Z]\\)" "nil" logic t t))
 
-  (emacs-wisent-grammar-converter/string-trim logic))
+  (emacs-wisent-grammar-converter-string-trim logic))
 
-(defun emacs-wisent-grammar-converter/string-trim (string)
+(defun emacs-wisent-grammar-converter-string-trim (string)
   "Trim STRING from white-space."
-  (emacs-wisent-grammar-converter/string-trim-left (emacs-wisent-grammar-converter/string-trim-right string)))
+  (emacs-wisent-grammar-converter-string-trim-left (emacs-wisent-grammar-converter-string-trim-right string)))
 
-(defun emacs-wisent-grammar-converter/string-trim-left (string)
+(defun emacs-wisent-grammar-converter-string-trim-left (string)
   "Trim STRING from white-space."
   (replace-regexp-in-string "^[\n\t\\ ]+" "" string))
 
-(defun emacs-wisent-grammar-converter/string-trim-right (string)
+(defun emacs-wisent-grammar-converter-string-trim-right (string)
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
-(defun emacs-wisent-grammar-converter/generate-grammar-from-filename (source destination &optional header)
+(defun emacs-wisent-grammar-converter-generate-grammar-from-filename (source destination &optional header)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
     (switch-to-buffer buffer)
@@ -103,15 +106,12 @@
           (continue t)
           (grammar "")
           (block "")
-          (rule-start)
-          (rule-end)
           (rule "")
           (logic-start 0)
           (logic-end 0)
           (logic)
           (parse-stack '())
           (last-was-block-comment nil)
-          (last-was-quote nil)
           (rule-token-count 0))
 
       ;; Iterate through entire buffer starting from start
@@ -127,7 +127,6 @@
               (progn
                 (setq grammar (concat grammar (format "\n%s:\n    " (match-string 1))))
                 (setq block (match-string 1))
-                (setq rule-start (point))
                 (setq rule "")
                 (setq rule-token-count 0)
                 (message "Found block '%s'" block)
@@ -151,16 +150,12 @@
                 (let ((matches-delimiter (string= (match-string 1) "|"))
                       (matches-end (string= (match-string 1) ";")))
 
-                  ;; Collect rule here
-                  (setq rule-end (point))
-
                   ;; Did last action add a new-line?
                   (setq grammar (concat grammar rule))
                   (setq rule "")
 
                   ;; Is it the start of a new rule?
                   (when matches-delimiter
-                    (setq rule-start (point))
                     (setq rule-token-count 0)
                     (setq grammar (concat grammar "\n    | "))
                     (message "Found another rule in block"))
@@ -174,13 +169,11 @@
 
                ;; Is it a logic start delimiter?
                ((string= (match-string 1) "{")
-                (setq rule-end (point))
                 (if (and (> rule-token-count 0) (not last-was-block-comment))
                     (setq rule (concat rule " "))
                   (setq rule (concat rule "\n    ")))
                 (setq rule (concat rule "("))
                 (setq last-was-block-comment nil)
-                (setq last-was-quote nil)
                 (setq logic-start (point))
                 (setq level "logic"))
 
@@ -192,12 +185,10 @@
                   (if (search-forward-regexp "\'" nil t)
                       (progn
                         (setq quote-end (point))
-                        (setq rule-start quote-end)
-                        (setq quote (emacs-wisent-grammar-converter/string-trim (buffer-substring (- quote-start 1) quote-end)))
+                        (setq quote (emacs-wisent-grammar-converter-string-trim (buffer-substring (- quote-start 1) quote-end)))
                         (when (> rule-token-count 0)
                           (setq rule (concat rule " ")))
                         (setq rule (concat rule quote))
-                        (setq last-was-quote t)
                         (setq rule-token-count (+ rule-token-count 1)))
                     (progn
                       (message "Failed to find ending single-quote")
@@ -211,12 +202,10 @@
                   (if (search-forward-regexp "\"" nil t)
                       (progn
                         (setq quote-end (point))
-                        (setq rule-start quote-end)
-                        (setq quote (emacs-wisent-grammar-converter/string-trim (buffer-substring (- quote-start 1) quote-end 1)))
+                        (setq quote (emacs-wisent-grammar-converter-string-trim (buffer-substring (- quote-start 1) quote-end 1)))
                         (when (> rule-token-count 0)
                           (setq rule (concat rule " ")))
                         (setq rule (concat rule quote))
-                        (setq last-was-quote t)
                         (setq rule-token-count (+ rule-token-count 1)))
                     (progn
                       (message "Failed to find ending double-quote")
@@ -235,11 +224,10 @@
                   (if (search-forward-regexp "*/" nil t)
                       (progn
                         (setq comment-end (point))
-                        (setq comment (emacs-wisent-grammar-converter/string-trim (buffer-substring comment-start (- comment-end 2))))
+                        (setq comment (emacs-wisent-grammar-converter-string-trim (buffer-substring comment-start (- comment-end 2))))
                         (when (> rule-token-count 0)
                           (setq rule (concat rule " ")))
-                        (setq rule (concat rule ";; " (emacs-wisent-grammar-converter/string-trim comment)))
-                        (setq rule-start comment-end)
+                        (setq rule (concat rule ";; " (emacs-wisent-grammar-converter-string-trim comment)))
                         (setq last-was-block-comment t))
                     (progn
                       (message "Failed to find ending doc comment block")
@@ -249,7 +237,6 @@
                     (when (> rule-token-count 0)
                       (setq rule (concat rule " ")))
                     (setq rule (concat rule (match-string 1)))
-                    (setq last-was-quote nil)
                     (setq last-was-block-comment nil)
                     (setq rule-token-count (+ rule-token-count 1))))
                
@@ -269,9 +256,9 @@
 
                ((string= (match-string 1) "}")
                 (setq logic-end (point))
-                (setq logic (emacs-wisent-grammar-converter/string-trim (buffer-substring logic-start (- logic-end 1))))
+                (setq logic (emacs-wisent-grammar-converter-string-trim (buffer-substring logic-start (- logic-end 1))))
 
-                (setq logic (emacs-wisent-grammar/reformat-logic-block logic))
+                (setq logic (emacs-wisent-grammar-converter-reformat-logic-block logic))
                 
                 (setq rule (concat rule logic ")"))
 
@@ -280,13 +267,12 @@
                   (if previous
                       (setq logic-start (point))
                     (progn
-                      (setq rule-start (point))
                       (setq level "block")))))
 
                ;; Is it the start of nested logic?
                ((string= (match-string 1) "{")
                 (setq logic-end (point))
-                (setq logic (emacs-wisent-grammar-converter/string-trim (buffer-substring logic-start (- logic-end 1))))
+                (setq logic (emacs-wisent-grammar-converter-string-trim (buffer-substring logic-start (- logic-end 1))))
                 (setq rule (concat rule " (" logic))
                 (push (list logic-start logic-end) parse-stack)
                 (setq logic-start (point)))
@@ -309,6 +295,7 @@
       ;; Prepend header if specified
       (when (and (boundp 'header)
                  header)
+        (goto-char (point-min))
         (insert "\n\n")
         (insert-file-contents header))
 
