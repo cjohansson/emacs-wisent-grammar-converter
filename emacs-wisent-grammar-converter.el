@@ -293,11 +293,11 @@
       (delete-region (point-min) (point-max))
 
       ;; Prepend header if specified
-      (when (and (boundp 'header)
-                 header)
+      (when header
         (goto-char (point-min))
-        (insert "\n\n")
-        (insert-file-contents header))
+        (insert-file-contents header)
+        (goto-char (point-max))
+        (insert "\n\n"))
 
       (goto-char (point-max))
 
@@ -308,6 +308,8 @@
       ;; Untabify and clean-up white-spaces
       (untabify (point-min) (point-max))
       (whitespace-cleanup)
+
+      (write-file destination)
 
       ;; Return current buffer as string
       (buffer-string)
