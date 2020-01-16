@@ -1,0 +1,4 @@
+flycheck_*
+*.elc
+.dir-locals.el
+.DS_Store
