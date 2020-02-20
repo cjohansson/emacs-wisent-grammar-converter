@@ -1,7 +1,9 @@
-EMACS = "emacs"
+EMACS = emacs
+ifdef emacs
+	EMACS = $(emacs)
+endif
 EMACS_CMD := $(EMACS) -Q -batch -L .
 
-EL  := test/emacs-wisent-grammar-converter-test.el
-
+.PHONY: test
 test:
 	$(EMACS_CMD) -l test/emacs-wisent-grammar-converter-test.el
