@@ -3,8 +3,8 @@
 ;; Author: Christian Johansson <christian@cvj.se>
 ;; Maintainer: Christian Johansson <christian@cvj.se>
 ;; Created: 9 Aug 2018
-;; Modified: 2 Oct 2019
-;; Version: 0.2
+;; Modified: 13 Apr 2020
+;; Version: 0.2.1
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-wisent-grammar-converter
 
@@ -33,14 +33,8 @@
 
 ;; This project converts a Bison YACC grammar into a Wisent grammar.
 
-;; TODO Fix stuff like CG(abc) = 1
-;; TODO Fix stuff like a ? b : c
-;; TODO $$ = null
-;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
-
 
 ;;; Code:
-
 
 (defun emacs-wisent-grammar-converter--reformat-logic-block (logic &optional prefix)
   "Reformat LOGIC from C to elisp, use PREFIX if specified."
