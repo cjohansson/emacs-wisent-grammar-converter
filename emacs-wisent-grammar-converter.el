@@ -36,7 +36,6 @@
 ;; TODO Fix stuff like CG(abc) = 1
 ;; TODO Fix stuff like a ? b : c
 ;; TODO $$ = null
-;; TODO Support function and variable prefix
 ;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
 
 
@@ -48,14 +47,17 @@
   (unless prefix
     (setq prefix ""))
 
-  ;; Remove line-feeds and carriage returns
+  ;; Replace line-feeds and carriage returns with space
   (setq logic (replace-regexp-in-string "\\(\n\\|\r\\)+" " " logic))
 
-  ;; Replace more than one space with single space
+  ;; Replace comma with space
+  (setq logic (replace-regexp-in-string ",\\ +" " " logic))
+
+  ;; Replace more than one space with a single space
   (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
 
-  ;; Transform statements like    zend(a, b, c)    into    (zend a b c)
-  (while (string-match "\\([a-zA-Z_]+\\)(\\([^)]*\\))" logic)
+  ;; Transform statements like    zend(a, b, c)    into    ($PREFIXzend a b c)
+  (while (string-match "\\([a-zA-Z_-]+\\)(\\([^)]*\\))" logic)
     (if (string= (match-string 2 logic) "")
         (setq logic (replace-match (format "(%s%s)" prefix (match-string 1 logic)) t t logic))
       (setq logic (replace-match (format "(%s%s %s)" prefix (match-string 1 logic) (match-string 2 logic)) t t logic))))
@@ -64,16 +66,13 @@
   (while (string-match "$$ = $\\([0-9]+\\);" logic)
     (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
 
-  ;; Transform statements like    $$ = (zend    into    (zend
+  ;; Transform statements like    $$ = (zend    into    ($PREFIXzend
   (while (string-match "$$ = \\(([a-zA-Z_]\\)" logic)
     (setq logic (replace-match (format "%s%s" prefix (match-string 1 logic)) t t logic)))
 
   ;; Transform statements like    $$->attr = ZEND_NAME_NOT_FQ;    into    (put $$ 'attr 'ZEND_NAME_NOT_FQ)
   (while (string-match "\\([\$a-zA-Z0-9]+\\)->\\([a-zA-Z0-9]+\\)[\\ ]*=[\\ ]*\\([^;]+\\);" logic)
     (setq logic (replace-match (format "(put %s '%s '%s)" (match-string 1 logic) (match-string 2 logic) (match-string 3 logic)) t t logic)))
-
-  ;; Replace comma with space
-  (setq logic (replace-regexp-in-string ",\\ +" " " logic))
 
   ;; Replace semi-colon with nothing
   (setq logic (replace-regexp-in-string ";" "" logic))
