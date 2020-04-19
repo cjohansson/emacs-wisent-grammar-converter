@@ -121,6 +121,15 @@
         (setq start (match-end 1)))
        ((equal
          (string-match
+          "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z0-9_]+\\)"
+          string
+          start)
+         start)
+        (push (list 'DECLARATION (match-string 1 string)) tokens)
+        (push (list 'VARIABLE (match-string 2 string)) tokens)
+        (setq start (match-end 2)))
+       ((equal
+         (string-match
           "[a-zA-Z0-9_]+"
           string
           start)
