@@ -113,11 +113,43 @@
         (setq start (match-end 1)))
        ((equal
          (string-match
+          "&\\([a-zA-Z0-9_]+\\)"
+          string
+          start)
+         start)
+        (push (list 'DEREFERENCE (match-string 1 string)) tokens)
+        (setq start (match-end 1)))
+       ((equal
+         (string-match
           "[a-zA-Z0-9_]+"
           string
           start)
          start)
         (push (list 'VARIABLE (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "null"
+          string
+          start)
+         start)
+        (push (list 'NULL (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "?"
+          string
+          start)
+         start)
+        (push (list 'QUESTION_MARK (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          ":"
+          string
+          start)
+         start)
+        (push (list 'COLON (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -141,7 +173,7 @@
           string
           start)
          start)
-        (push (list 'OPEN_PARENTHESIS "(") tokens)
+        (push (list 'OPEN_PARENTHESIS (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -149,7 +181,7 @@
           string
           start)
          start)
-        (push (list 'CLOSE_PARENTHESIS ")") tokens)
+        (push (list 'CLOSE_PARENTHESIS (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -157,7 +189,7 @@
           string
           start)
          start)
-        (push (list 'SEMICOLON ";") tokens)
+        (push (list 'SEMICOLON (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -165,15 +197,7 @@
           string
           start)
          start)
-        (push (list 'COMMA ",") tokens)
-        (setq start (match-end 0)))
-       ((equal
-         (string-match
-          "|="
-          string
-          start)
-         start)
-        (push (list 'BITWISE_ASSIGNMENT "|=") tokens)
+        (push (list 'COMMA (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -181,7 +205,7 @@
           string
           start)
          start)
-        (push (list 'EQUAL "==") tokens)
+        (push (list 'EQUAL (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -189,7 +213,7 @@
           string
           start)
          start)
-        (push (list 'EQUAL "==") tokens)
+        (push (list 'EQUAL (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -197,15 +221,31 @@
           string
           start)
          start)
-        (push (list 'BITWISE_ASSIGNMENT "|=") tokens)
+        (push (list 'BITWISE_OR_ASSIGNMENT (match-string 0 string)) tokens)
         (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "|"
+          string
+          start)
+         start)
+        (push (list 'BITWISE_OR (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "&="
+          string
+          start)
+         start)
+        (push (list 'BITWISE_AND_ASSIGNMENT (match-string 0 string)) tokens)
+        (setq start (match-end 1)))
        ((equal
          (string-match
           "="
           string
           start)
          start)
-        (push (list 'ASSIGNMENT "=") tokens)
+        (push (list 'ASSIGNMENT (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        (t
         (if (equal

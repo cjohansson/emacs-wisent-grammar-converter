@@ -168,6 +168,16 @@
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";")))
           )
+
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "zval zv; zend_lex_tstring(&zv); $$ = zend_ast_create(ZEND_AST_TRAIT_ALIAS, $1, zend_ast_create_zval(&zv));"
+            )
+           (list
+            (list 'FUNCTION "mask")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";"))))
   )
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
