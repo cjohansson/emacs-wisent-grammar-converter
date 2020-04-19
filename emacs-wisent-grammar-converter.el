@@ -96,6 +96,128 @@
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
+(defun emacs-wisent-grammar-converter--lex-c-string (string)
+  "Run lexer on STRING, return list of tokens."
+  (let ((tokens '())
+        (continue t)
+        (start 0))
+    (while continue
+      (cond
+       ((equal
+         (string-match
+          "\\([a-zA-Z0-9_]+\\)("
+          string
+          start)
+         start)
+        (push (list 'FUNCTION (match-string 1 string)) tokens)
+        (setq start (match-end 1)))
+       ((equal
+         (string-match
+          "[a-zA-Z0-9_]+"
+          string
+          start)
+         start)
+        (push (list 'VARIABLE (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\\$\\$"
+          string
+          start)
+         start)
+        (push (list 'RETURN (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\\$[0-9]"
+          string
+          start)
+         start)
+        (push (list 'PARAMETER (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "("
+          string
+          start)
+         start)
+        (push (list 'OPEN_PARENTHESIS "(") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          ")"
+          string
+          start)
+         start)
+        (push (list 'CLOSE_PARENTHESIS ")") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          ";"
+          string
+          start)
+         start)
+        (push (list 'SEMICOLON ";") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          ","
+          string
+          start)
+         start)
+        (push (list 'COMMA ",") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "|="
+          string
+          start)
+         start)
+        (push (list 'BITWISE_ASSIGNMENT "|=") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "=="
+          string
+          start)
+         start)
+        (push (list 'EQUAL "==") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "=="
+          string
+          start)
+         start)
+        (push (list 'EQUAL "==") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "|="
+          string
+          start)
+         start)
+        (push (list 'BITWISE_ASSIGNMENT "|=") tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "="
+          string
+          start)
+         start)
+        (push (list 'ASSIGNMENT "=") tokens)
+        (setq start (match-end 0)))
+       (t
+        (if (equal
+             (string-match
+              "[\t\n ]+"
+              string
+              start)
+             start)
+            (setq start (match-end 0))
+          (setq continue nil)))))
+    (nreverse tokens)))
+
 (defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header prefix)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified, use PREFIX if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
@@ -257,7 +379,7 @@
                  (setq logic-end (point))
                  (setq logic (emacs-wisent-grammar-converter--string-trim (buffer-substring logic-start (- logic-end 1))))
 
-                 (setq logic (emacs-wisent-grammar-converter-reformat-logic-block logic))
+                 (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic))
                  
                  (setq rule (concat rule logic ")"))
 
