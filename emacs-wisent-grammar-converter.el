@@ -328,6 +328,27 @@
                  (setq namespaced-name (format "%s%s" namespace token-value)))
                (push namespaced-name emacs-lisp))))
 
+          
+
+          ('PARAMETER
+           (cond
+           ;; Are we inside a function-call?
+            ((and
+              function-bracket-stack
+              (equal
+               (car function-bracket-stack)
+               bracket-level))
+
+             (push (format " %s" token-value) emacs-lisp))
+
+           ((and
+                  previous-token
+                  (equal (car previous-token) 'ASSIGNMENT)
+                  previous-previous-token
+                  (equal (car previous-previous-token) 'RETURN))
+            (push token-value emacs-lisp))
+           t))
+
           (_
            ;; (message "token-id not found %s" token-id)
            ))

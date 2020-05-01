@@ -225,10 +225,10 @@
             (list 'FUNCTION "mask")
             (list 'OPEN_PARENTHESIS "(")
             (list 'VARIABLE "zv")
-            (list 'VARIABLE "zv2")
+            (list 'PARAMETER "$2")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";")))
-           "(mask zv zv2)"))
+           "(mask zv $2)"))
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -259,61 +259,42 @@
             "namespace-")
            "(namespace-mask namespace-zv)"))
 
-
-  ;; (should (equal
-  ;;          "(random-random-statement)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "	random-statement();  	\n\n" "random-")))
-
-  ;; ;; White-space
-  ;; (should (equal
-  ;;          "random-statement"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "	random-statement;  	\n\n")))
-
   ;; ;; Return a argument
-  ;; (should (equal
-  ;;          "$3"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  $$ = $3;  	\n\n")))
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'PARAMETER "$3")
+             (list 'SEMICOLON ";")))
+           "$3"))
 
-  ;; ;; Function calls with arguments
-  ;; (should (equal
-  ;;          "(zend_ast_create ZEND_AST_EMPTY $3)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
 
-  ;; ;; Function calls without arguments
-  ;; (should (equal
-  ;;          "(zend_ast_create)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  zend_ast_create();  	\n\n")))
-
-  ;; ;; NULL values like    ($$ = NULLABLE)
+  ;; ;; TODO NULL values like    ($$ = NULL)
   ;; (should (equal
   ;;          "$$ = nil"
   ;;          (emacs-wisent-grammar-converter--reformat-logic-block
   ;;           "  $$ = NULL;  	\n\n")))
 
-  ;; ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  ;; ;; TODO Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
   ;; (should (equal
   ;;          "(put $$ 'attr 'ZEND_NAME_NOT_FQ)"
   ;;          (emacs-wisent-grammar-converter--reformat-logic-block
   ;;           "  $$->attr = ZEND_NAME_NOT_FQ;  	\n\n")))
 
-  ;; ;; Logical or like    $1 | $2
+  ;; ;; TODO Logical or like    $1 | $2
   ;; (should (equal
   ;;          "(logior $1 $2)"
   ;;          (emacs-wisent-grammar-converter--reformat-logic-block
   ;;           "  $1 | $2  	\n\n")))
 
-  ;; ;; Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
+  ;; ;; TODO Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
   ;; (should (equal
   ;;          ";; allow single trailing comma\n(zend_ast_list_rtrim $1)"
   ;;          (emacs-wisent-grammar-converter--reformat-logic-block
   ;;           "/* allow single trailing comma */ (zend_ast_list_rtrim $1)")))
 
-  ;; ;; Return function call
+  ;; ;; TODO Return function call
   ;; (should (equal
   ;;          "(zend_ast_create ZEND_AST_EMPTY $3)"
   ;;          (emacs-wisent-grammar-converter--reformat-logic-block
