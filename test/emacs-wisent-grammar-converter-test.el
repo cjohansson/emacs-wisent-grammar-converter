@@ -199,8 +199,42 @@
            ))
   )
 
+(defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
+  "Test `emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp'"
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+            (list 'FUNCTION "mask")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")))
+           "(mask)"))
+
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+            (list 'FUNCTION "mask")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'VARIABLE "zv")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")))
+           "(mask zv)"))
+
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+            (list 'FUNCTION "mask")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'VARIABLE "zv")
+            (list 'VARIABLE "zv2")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")))
+           "(mask zv zv2)"))
+  )
+
 (emacs-wisent-grammar-converter-test--lex-c-string)
-(emacs-wisent-grammar-converter-test--reformat-logic-block)
+(emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp)
+;; (emacs-wisent-grammar-converter-test--reformat-logic-block)
 
 (message "Unit tests completed")
 

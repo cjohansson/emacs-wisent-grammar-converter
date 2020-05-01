@@ -267,6 +267,70 @@
           (setq continue nil)))))
     (nreverse tokens)))
 
+(defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens)
+  "Convert TOKENS into emacs lisp."
+  (let ((emacs-lisp nil)
+        (previous-token nil)
+        (previous-previous-token nil)
+        (bracket-level 0)
+        (function-bracket-stack nil))
+    (dolist (token tokens)
+      (let ((token-id (car token))
+            (token-value (car (cdr token))))
+        (pcase token-id
+
+          ('FUNCTION
+          (push (format "(%s" token-value) emacs-lisp))
+
+          ('OPEN_PARENTHESIS
+           (setq bracket-level (1+ bracket-level))
+           (when (equal (car previous-token) 'FUNCTION)
+             (push bracket-level function-bracket-stack)))
+
+          ('CLOSE_PARENTHESIS
+           (setq bracket-level (1- bracket-level))
+
+           ;; (message "Closing bracket-level %s %s" bracket-level (car function-bracket-stack))
+
+           ;; Is it a closing of a function call?
+           (when (and
+                  function-bracket-stack
+                  (<
+                   bracket-level
+                   (car function-bracket-stack)
+                   ))
+             (push ")" emacs-lisp)
+             (pop function-bracket-stack)))
+
+          ('VARIABLE
+           ;; Are we inside a function-call?
+           (when (and
+                  function-bracket-stack
+                  (equal
+                   (car function-bracket-stack)
+                   bracket-level))
+             (push (format " %s" token-value) emacs-lisp)))
+
+          (_
+           ;; (message "token-id not found %s" token-id)
+           ))
+
+      (setq previous-previous-token previous-token)
+      (setq previous-token token)))
+
+    ;; (message "Items: %s" emacs-lisp)
+
+    (let ((emacs-lisp-string ""))
+      (dolist
+          (item (nreverse emacs-lisp))
+        (setq
+         emacs-lisp-string
+         (format
+          "%s%s"
+          emacs-lisp-string
+          item)))
+      emacs-lisp-string)))
+
 (defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header prefix)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified, use PREFIX if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
