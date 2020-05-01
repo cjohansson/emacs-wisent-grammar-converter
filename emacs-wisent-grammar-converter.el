@@ -267,7 +267,7 @@
           (setq continue nil)))))
     (nreverse tokens)))
 
-(defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens)
+(defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens &optional namespace)
   "Convert TOKENS into emacs lisp."
   (let ((emacs-lisp nil)
         (previous-token nil)
@@ -280,7 +280,19 @@
         (pcase token-id
 
           ('FUNCTION
-          (push (format "(%s" token-value) emacs-lisp))
+
+           ;; If we are inside a function call add space before nested function call
+           (when (and
+                  function-bracket-stack
+                  (=
+                   bracket-level
+                   (car function-bracket-stack)))
+             (push " " emacs-lisp))
+
+           (let ((namespaced-name token-value))
+             (when namespace
+               (setq namespaced-name (format "%s%s" namespace token-value)))
+             (push (format "(%s" namespaced-name) emacs-lisp)))
 
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level))
@@ -297,8 +309,7 @@
                   function-bracket-stack
                   (<
                    bracket-level
-                   (car function-bracket-stack)
-                   ))
+                   (car function-bracket-stack)))
              (push ")" emacs-lisp)
              (pop function-bracket-stack)))
 
@@ -309,7 +320,13 @@
                   (equal
                    (car function-bracket-stack)
                    bracket-level))
-             (push (format " %s" token-value) emacs-lisp)))
+
+             (push " " emacs-lisp)
+
+             (let ((namespaced-name token-value))
+               (when namespace
+                 (setq namespaced-name (format "%s%s" namespace token-value)))
+               (push namespaced-name emacs-lisp))))
 
           (_
            ;; (message "token-id not found %s" token-id)

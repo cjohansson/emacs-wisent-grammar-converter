@@ -196,8 +196,7 @@
             (list 'CLOSE_PARENTHESIS ")")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))
-           ))
-  )
+           )))
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
   "Test `emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp'"
@@ -230,6 +229,128 @@
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";")))
            "(mask zv zv2)"))
+
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+            (list 'FUNCTION "mask")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'FUNCTION "mask2")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'VARIABLE "zv")
+            (list 'COMMA ",")
+            (list 'VARIABLE "zv2")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'COMMA ",")
+            (list 'VARIABLE "zv3")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")))
+           "(mask (mask2 zv zv2) zv3)"))
+
+  ;; Test function and variable prefix
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'FUNCTION "mask")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "zv")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'SEMICOLON ";"))
+            "namespace-")
+           "(namespace-mask namespace-zv)"))
+
+
+  ;; (should (equal
+  ;;          "(random-random-statement)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "	random-statement();  	\n\n" "random-")))
+
+  ;; ;; White-space
+  ;; (should (equal
+  ;;          "random-statement"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "	random-statement;  	\n\n")))
+
+  ;; ;; Return a argument
+  ;; (should (equal
+  ;;          "$3"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  $$ = $3;  	\n\n")))
+
+  ;; ;; Function calls with arguments
+  ;; (should (equal
+  ;;          "(zend_ast_create ZEND_AST_EMPTY $3)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
+
+  ;; ;; Function calls without arguments
+  ;; (should (equal
+  ;;          "(zend_ast_create)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  zend_ast_create();  	\n\n")))
+
+  ;; ;; NULL values like    ($$ = NULLABLE)
+  ;; (should (equal
+  ;;          "$$ = nil"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  $$ = NULL;  	\n\n")))
+
+  ;; ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  ;; (should (equal
+  ;;          "(put $$ 'attr 'ZEND_NAME_NOT_FQ)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  $$->attr = ZEND_NAME_NOT_FQ;  	\n\n")))
+
+  ;; ;; Logical or like    $1 | $2
+  ;; (should (equal
+  ;;          "(logior $1 $2)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  $1 | $2  	\n\n")))
+
+  ;; ;; Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
+  ;; (should (equal
+  ;;          ";; allow single trailing comma\n(zend_ast_list_rtrim $1)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "/* allow single trailing comma */ (zend_ast_list_rtrim $1)")))
+
+  ;; ;; Return function call
+  ;; (should (equal
+  ;;          "(zend_ast_create ZEND_AST_EMPTY $3)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  $$ = zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
+
+  ;; ;; TODO Syntactic sugar like    1 ? 2 : 0
+  ;; (should (equal
+  ;;          "(if 1 2 0)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  1 ? 2 : 0  	\n\n")))
+
+  ;; ;; TODO Place return statements last in block    $$ = ...
+  ;; (should (equal
+  ;;          "(a)(b)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "  $$ = b(); a();")))
+
+  ;; ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
+  ;; (should (equal
+  ;;          "(CG exra_fn_lags 0)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "CG(extra_fn_lags) = 0;")))
+
+  ;; ;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR -> (CG extra_fn_flags (bitwise-or (CG extra_fn_lags)))
+  ;; (should (equal
+  ;;          "(CG exra_fn_lags (bitwise-or (CG extra_fn_lags) ZEND_ACC_GENERATOR))"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "	(CG extra_fn_lags) |= ZEND_ACC_GENERATOR")))
+
+  ;; ;; TODO Dereferenced pointers like    (zend_ast *decl ?
+  ;; (should (equal
+  ;;          "(symbol-value SYMBOL)"
+  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
+  ;;           "	*SYMBOL")))
+
+  ;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
+
   )
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
