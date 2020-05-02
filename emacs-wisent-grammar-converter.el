@@ -117,7 +117,15 @@
           string
           start)
          start)
-        (push (list 'DEREFERENCE (match-string 1 string)) tokens)
+        (push (list 'REFERENCE (match-string 1 string)) tokens)
+        (setq start (match-end 1)))
+       ((equal
+         (string-match
+          "\*\\([a-zA-Z0-9_]+\\)"
+          string
+          start)
+         start)
+        (push (list 'POINTER (match-string 1 string)) tokens)
         (setq start (match-end 1)))
        ((equal
          (string-match
@@ -159,6 +167,14 @@
           start)
          start)
         (push (list 'COLON (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "->"
+          string
+          start)
+         start)
+        (push (list 'MEMBER_OPERATOR (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -207,6 +223,14 @@
           start)
          start)
         (push (list 'COMMA (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\\."
+          string
+          start)
+         start)
+        (push (list 'DOT (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -273,7 +297,8 @@
         (previous-token nil)
         (previous-previous-token nil)
         (bracket-level 0)
-        (function-bracket-stack nil))
+        (function-bracket-stack nil)
+        (assignment-bracket-stack nil))
     (dolist (token tokens)
       (let ((token-id (car token))
             (token-value (car (cdr token))))
@@ -298,6 +323,42 @@
            (setq bracket-level (1+ bracket-level))
            (when (equal (car previous-token) 'FUNCTION)
              (push bracket-level function-bracket-stack)))
+
+          ('SEMICOLON
+           (when (and
+                  assignment-bracket-stack
+                  (equal
+                   (car (car assignment-bracket-stack))
+                   bracket-level))
+             (message "Ended assignment %s" (car assignment-bracket-stack))
+             (pop assignment-bracket-stack)))
+
+          ('ASSIGNMENT
+           (let ((assignment-subject nil))
+             (pcase (car previous-token)
+               ('VARIABLE
+                (setq
+                 assignment-subject
+                 (format
+                  "(setq '%s "
+                  (car (cdr previous-token)))))
+               ('PARAMETER
+                (setq
+                 assignment-subject
+                 (format
+                  "(setq '%s "
+                  (car (cdr previous-token)))))
+               ('MEMBER_OPERATOR
+                (setq
+                 assignment-subject
+                 (format
+                  "(put '%s '%s '%s "
+                  (car (cdr (previous-previous-token)))
+                  (car (cdr (previous-token))))))
+               _)
+             (push
+              (list bracket-level assignment-subject)
+              assignment-bracket-stack)))
 
           ('CLOSE_PARENTHESIS
            (setq bracket-level (1- bracket-level))
@@ -328,11 +389,20 @@
                  (setq namespaced-name (format "%s%s" namespace token-value)))
                (push namespaced-name emacs-lisp))))
 
-          
+          ('NULL
+           (cond
+
+            ((and
+              previous-token
+              (equal (car previous-token) 'ASSIGNMENT)
+              previous-previous-token
+              (equal (car previous-previous-token) 'RETURN))
+             (push "nil" emacs-lisp))
+            t))
 
           ('PARAMETER
            (cond
-           ;; Are we inside a function-call?
+            ;; Are we inside a function-call?
             ((and
               function-bracket-stack
               (equal
@@ -341,20 +411,20 @@
 
              (push (format " %s" token-value) emacs-lisp))
 
-           ((and
-                  previous-token
-                  (equal (car previous-token) 'ASSIGNMENT)
-                  previous-previous-token
-                  (equal (car previous-previous-token) 'RETURN))
-            (push token-value emacs-lisp))
-           t))
+            ((and
+              previous-token
+              (equal (car previous-token) 'ASSIGNMENT)
+              previous-previous-token
+              (equal (car previous-previous-token) 'RETURN))
+             (push token-value emacs-lisp))
+            t))
 
           (_
            ;; (message "token-id not found %s" token-id)
            ))
 
-      (setq previous-previous-token previous-token)
-      (setq previous-token token)))
+        (setq previous-previous-token previous-token)
+        (setq previous-token token)))
 
     ;; (message "Items: %s" emacs-lisp)
 

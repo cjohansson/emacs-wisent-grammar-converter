@@ -179,7 +179,7 @@
             (list 'SEMICOLON ";")
             (list 'FUNCTION "zend_lex_tstring")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'DEREFERENCE "zv")
+            (list 'REFERENCE "zv")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";")
             (list 'RETURN "$$")
@@ -192,59 +192,73 @@
             (list 'COMMA ",")
             (list 'FUNCTION "zend_ast_create_zval")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'DEREFERENCE "zv")
+            (list 'REFERENCE "zv")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))
-           )))
+           ))
+
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "$$->attr = ZEND_NAME_NOT_FQ;"
+            )
+           (list
+            (list 'RETURN "$$")
+            (list 'MEMBER_OPERATOR "->")
+            (list 'VARIABLE "attr")
+            (list 'ASSIGNMENT "=")
+            (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+            (list 'SEMICOLON ";"))))
+
+  )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
   "Test `emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp'"
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
-            (list 'FUNCTION "mask")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'SEMICOLON ";")))
+             (list 'FUNCTION "mask")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'SEMICOLON ";")))
            "(mask)"))
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
-            (list 'FUNCTION "mask")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "zv")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'SEMICOLON ";")))
+             (list 'FUNCTION "mask")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "zv")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'SEMICOLON ";")))
            "(mask zv)"))
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
-            (list 'FUNCTION "mask")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "zv")
-            (list 'PARAMETER "$2")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'SEMICOLON ";")))
+             (list 'FUNCTION "mask")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "zv")
+             (list 'PARAMETER "$2")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'SEMICOLON ";")))
            "(mask zv $2)"))
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
-            (list 'FUNCTION "mask")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'FUNCTION "mask2")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "zv")
-            (list 'COMMA ",")
-            (list 'VARIABLE "zv2")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'COMMA ",")
-            (list 'VARIABLE "zv3")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'SEMICOLON ";")))
+             (list 'FUNCTION "mask")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'FUNCTION "mask2")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "zv")
+             (list 'COMMA ",")
+             (list 'VARIABLE "zv2")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'COMMA ",")
+             (list 'VARIABLE "zv3")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'SEMICOLON ";")))
            "(mask (mask2 zv zv2) zv3)"))
 
   ;; Test function and variable prefix
@@ -259,7 +273,7 @@
             "namespace-")
            "(namespace-mask namespace-zv)"))
 
-  ;; ;; Return a argument
+  ;; Return a argument
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -269,18 +283,37 @@
              (list 'SEMICOLON ";")))
            "$3"))
 
-
-  ;; ;; TODO NULL values like    ($$ = NULL)
+  ;; ;; NULL values like    ($$ = NULL)
   ;; (should (equal
-  ;;          "$$ = nil"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  $$ = NULL;  	\n\n")))
+  ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+  ;;           (list
+  ;;            (list 'RETURN "$$")
+  ;;            (list 'ASSIGNMENT "=")
+  ;;            (list 'NULL "null")
+  ;;            (list 'SEMICOLON ";")))
+  ;;          "nil"))
 
-  ;; ;; TODO Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  ;; ;; ;; TODO Parameter assignments like $1 = zend_attr:
   ;; (should (equal
-  ;;          "(put $$ 'attr 'ZEND_NAME_NOT_FQ)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  $$->attr = ZEND_NAME_NOT_FQ;  	\n\n")))
+  ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+  ;;           (list
+  ;;            (list 'PARAMETER "$1")
+  ;;            (list 'ASSIGNMENT "=")
+  ;;            (list 'VARIABLE "zend_attr")
+  ;;            (list 'SEMICOLON ";")))
+  ;;          "(setq $1 'zend_attr)"))
+
+  ;; ;; ;; TODO Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  ;; (should (equal
+  ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+  ;;           (list
+  ;;            (list 'RETURN "$$")
+  ;;            (list 'MEMBER_OPERATOR "->")
+  ;;            (list 'VARIABLE "attr")
+  ;;            (list 'ASSIGNMENT "=")
+  ;;            (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+  ;;            (list 'SEMICOLON ";")))
+  ;;          "(put $$ 'attr 'ZEND_NAME_NOT_FQ) $$"))
 
   ;; ;; TODO Logical or like    $1 | $2
   ;; (should (equal
