@@ -334,28 +334,32 @@
              (pop assignment-bracket-stack)))
 
           ('ASSIGNMENT
-           (let ((assignment-subject nil))
+           (let ((assignment-subject nil)
+                 (previous-token-tag (car previous-token)))
+
+             (message "Assignment token: %s %s" previous-previous-token previous-token)
+
              (pcase (car previous-token)
                ('VARIABLE
                 (setq
                  assignment-subject
                  (format
-                  "(setq '%s "
+                  "(setq %s "
                   (car (cdr previous-token)))))
                ('PARAMETER
                 (setq
                  assignment-subject
                  (format
-                  "(setq '%s "
+                  "(setq %s "
                   (car (cdr previous-token)))))
                ('MEMBER_OPERATOR
                 (setq
                  assignment-subject
                  (format
-                  "(put '%s '%s '%s "
+                  "(put %s '%s "
                   (car (cdr (previous-previous-token)))
-                  (car (cdr (previous-token))))))
-               _)
+                  (car (cdr (previous-token)))))))
+
              (push
               (list bracket-level assignment-subject)
               assignment-bracket-stack)))

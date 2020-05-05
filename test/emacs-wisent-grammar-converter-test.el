@@ -283,17 +283,17 @@
              (list 'SEMICOLON ";")))
            "$3"))
 
-  ;; ;; NULL values like    ($$ = NULL)
-  ;; (should (equal
-  ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
-  ;;           (list
-  ;;            (list 'RETURN "$$")
-  ;;            (list 'ASSIGNMENT "=")
-  ;;            (list 'NULL "null")
-  ;;            (list 'SEMICOLON ";")))
-  ;;          "nil"))
+  ;; NULL values like    ($$ = NULL)
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'NULL "null")
+             (list 'SEMICOLON ";")))
+           "nil"))
 
-  ;; ;; ;; TODO Parameter assignments like $1 = zend_attr:
+  ;; ;; ;; Parameter assignments like $1 = zend_attr:
   ;; (should (equal
   ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
   ;;           (list
