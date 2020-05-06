@@ -331,6 +331,13 @@
                    (car (car assignment-bracket-stack))
                    bracket-level))
              (message "Ended assignment %s" (car assignment-bracket-stack))
+             (when (car (cdr (car assignment-bracket-stack)))
+               (push
+                (format
+                 "%s'%s)"
+                 (car (cdr (car assignment-bracket-stack)))
+                 (car (cdr previous-token)))
+                emacs-lisp))
              (pop assignment-bracket-stack)))
 
           ('ASSIGNMENT
@@ -420,12 +427,7 @@
               (equal (car previous-token) 'ASSIGNMENT)
               previous-previous-token
               (equal (car previous-previous-token) 'RETURN))
-             (push token-value emacs-lisp))
-            t))
-
-          (_
-           ;; (message "token-id not found %s" token-id)
-           ))
+             (push token-value emacs-lisp)))))
 
         (setq previous-previous-token previous-token)
         (setq previous-token token)))

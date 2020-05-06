@@ -293,15 +293,15 @@
              (list 'SEMICOLON ";")))
            "nil"))
 
-  ;; ;; ;; Parameter assignments like $1 = zend_attr:
-  ;; (should (equal
-  ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
-  ;;           (list
-  ;;            (list 'PARAMETER "$1")
-  ;;            (list 'ASSIGNMENT "=")
-  ;;            (list 'VARIABLE "zend_attr")
-  ;;            (list 'SEMICOLON ";")))
-  ;;          "(setq $1 'zend_attr)"))
+   ;; ;; Parameter assignments like $1 = zend_attr:
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'PARAMETER "$1")
+             (list 'ASSIGNMENT "=")
+             (list 'VARIABLE "zend_attr")
+             (list 'SEMICOLON ";")))
+           "(setq $1 'zend_attr)"))
 
   ;; ;; ;; TODO Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
   ;; (should (equal
