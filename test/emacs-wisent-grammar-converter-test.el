@@ -303,17 +303,17 @@
              (list 'SEMICOLON ";")))
            "(setq $1 'zend_attr)"))
 
-  ;; ;; ;; TODO Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
-  ;; (should (equal
-  ;;          (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
-  ;;           (list
-  ;;            (list 'RETURN "$$")
-  ;;            (list 'MEMBER_OPERATOR "->")
-  ;;            (list 'VARIABLE "attr")
-  ;;            (list 'ASSIGNMENT "=")
-  ;;            (list 'VARIABLE "ZEND_NAME_NOT_FQ")
-  ;;            (list 'SEMICOLON ";")))
-  ;;          "(put $$ 'attr 'ZEND_NAME_NOT_FQ) $$"))
+  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'MEMBER_OPERATOR "->")
+             (list 'VARIABLE "attr")
+             (list 'ASSIGNMENT "=")
+             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+             (list 'SEMICOLON ";")))
+           "(put $$ 'attr 'ZEND_NAME_NOT_FQ) $$"))
 
   ;; ;; TODO Logical or like    $1 | $2
   ;; (should (equal

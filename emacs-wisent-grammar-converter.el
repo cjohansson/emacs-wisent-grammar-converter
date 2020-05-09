@@ -291,159 +291,113 @@
           (setq continue nil)))))
     (nreverse tokens)))
 
+;; NOTE Recursive descent parser - BEGINS here
+
+(defvar emacs-wisent-grammar-converter--lexer-tokens-stack nil
+  "A stack of lexer tokens to parse.")
+
 (defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens &optional namespace)
-  "Convert TOKENS into emacs lisp."
-  (let ((emacs-lisp nil)
-        (previous-token nil)
-        (previous-previous-token nil)
-        (bracket-level 0)
-        (function-bracket-stack nil)
-        (assignment-bracket-stack nil))
-    (dolist (token tokens)
-      (let ((token-id (car token))
-            (token-value (car (cdr token))))
+  "Convert Bison grammar TOKENS into emacs-lisp using a recursive decent parser for each statement."
+  (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
+  (let ((return-string ""))
+    (while emacs-wisent-grammar-converter--lexer-tokens-stack
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-value (car (cdr emacs-wisent-grammar-converter--lexer-tokens-stack))))
         (pcase token-id
-
           ('FUNCTION
-
-           ;; If we are inside a function call add space before nested function call
-           (when (and
-                  function-bracket-stack
-                  (=
-                   bracket-level
-                   (car function-bracket-stack)))
-             (push " " emacs-lisp))
-
-           (let ((namespaced-name token-value))
-             (when namespace
-               (setq namespaced-name (format "%s%s" namespace token-value)))
-             (push (format "(%s" namespaced-name) emacs-lisp)))
-
-          ('OPEN_PARENTHESIS
-           (setq bracket-level (1+ bracket-level))
-           (when (equal (car previous-token) 'FUNCTION)
-             (push bracket-level function-bracket-stack)))
-
-          ('SEMICOLON
-           (when (and
-                  assignment-bracket-stack
-                  (equal
-                   (car (car assignment-bracket-stack))
-                   bracket-level))
-             (message "Ended assignment %s" (car assignment-bracket-stack))
-             (when (car (cdr (car assignment-bracket-stack)))
-               (push
-                (format
-                 "%s'%s)"
-                 (car (cdr (car assignment-bracket-stack)))
-                 (car (cdr previous-token)))
-                emacs-lisp))
-             (pop assignment-bracket-stack)))
-
-          ('ASSIGNMENT
-           (let ((assignment-subject nil)
-                 (previous-token-tag (car previous-token)))
-
-             (message "Assignment token: %s %s" previous-previous-token previous-token)
-
-             (pcase (car previous-token)
-               ('VARIABLE
-                (setq
-                 assignment-subject
-                 (format
-                  "(setq %s "
-                  (car (cdr previous-token)))))
-               ('PARAMETER
-                (setq
-                 assignment-subject
-                 (format
-                  "(setq %s "
-                  (car (cdr previous-token)))))
-               ('MEMBER_OPERATOR
-                (setq
-                 assignment-subject
-                 (format
-                  "(put %s '%s "
-                  (car (cdr (previous-previous-token)))
-                  (car (cdr (previous-token)))))))
-
-             (push
-              (list bracket-level assignment-subject)
-              assignment-bracket-stack)))
-
-          ('CLOSE_PARENTHESIS
-           (setq bracket-level (1- bracket-level))
-
-           ;; (message "Closing bracket-level %s %s" bracket-level (car function-bracket-stack))
-
-           ;; Is it a closing of a function call?
-           (when (and
-                  function-bracket-stack
-                  (<
-                   bracket-level
-                   (car function-bracket-stack)))
-             (push ")" emacs-lisp)
-             (pop function-bracket-stack)))
-
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--function token-value namespace))))
           ('VARIABLE
-           ;; Are we inside a function-call?
-           (when (and
-                  function-bracket-stack
-                  (equal
-                   (car function-bracket-stack)
-                   bracket-level))
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--variable token-value namespace))))
+          ('RETURN
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--return  namespace))))
+          ('SEMICOLON
+           (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+          (_ (message "Unexpected token %d" token)))))
+    return-string))
 
-             (push " " emacs-lisp)
+(defun emacs-wisent-grammar-converter--variable (name namespace)
+  "Recursive decent for variable NAME with NAMESPACE."
+  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+         ((token-id (car token)))
+         ((token-value (car (cdr token)))))
+    (pcase token-id
+      ('ASSIGNMENT
+       (format
+        "(setq %s%s %s)"
+        namespace
+        name
+        (emacs-wisent-grammar-converter--assignment namespace)))
+      ('MEMBER_OPERATOR
+       (format
+        "(put %s%s '%s)"
+        namespace
+        name
+        (emacs-wisent-grammar-converter--member-operator namespace)))
+      (_ (message "Unexpected variable token %s" token)))))
 
-             (let ((namespaced-name token-value))
-               (when namespace
-                 (setq namespaced-name (format "%s%s" namespace token-value)))
-               (push namespaced-name emacs-lisp))))
+(defun emacs-wisent-grammar-converter--return (namespace)
+  "Recursive decent for return NAME with NAMESPACE."
+  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+         (token-id (car token))
+         (token-value (car (cdr token))))
+    (pcase token-id
+      ('ASSIGNMENT
+       (format
+        "(%s)"
+        namespace
+        name
+        (emacs-wisent-grammar-converter--assignment namespace)))
+      ('MEMBER_OPERATOR
+       (format
+        "(put %s%s '%s)"
+        namespace
+        name
+        (emacs-wisent-grammar-converter--assignment namespace)))
+      (_ (message "Unexpected variable token %s" token)))))
 
-          ('NULL
-           (cond
+(defun emacs-wisent-grammar-converter--function (name namespace)
+  "Recursive decent for function NAME  and NAMESPACE."
+  (let* ((token (car (pop emacs-wisent-grammar-converter--lexer-tokens-stack)))
+         (token-id (car token))
+         (token-value (car (cdr token))))
+    (pcase token-id
+      ('CLOSE_PARENTHESIS
+       (format
+        "(%s%s)"
+        namespace
+        name))
+      (_ (format
+          "(%s%s %s)"
+          namespace
+          name
+          (emacs-wisent-grammar-converter--function-argument token namespace))))))
 
-            ((and
-              previous-token
-              (equal (car previous-token) 'ASSIGNMENT)
-              previous-previous-token
-              (equal (car previous-previous-token) 'RETURN))
-             (push "nil" emacs-lisp))
-            t))
+(defun emacs-wisent-grammar-converter--assignment ( namespace)
+  "Recursive descent for assignment  using NAMESPACE."
+  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+         (token-id (car token))
+         (token-value (car (cdr token))))
+    (pcase token-id
+      ('PARAMETER
+       token-value)
+      (_ (message "Unexpected variable token %s" token)))))
 
-          ('PARAMETER
-           (cond
-            ;; Are we inside a function-call?
-            ((and
-              function-bracket-stack
-              (equal
-               (car function-bracket-stack)
-               bracket-level))
 
-             (push (format " %s" token-value) emacs-lisp))
+;; NOTE Recursive descent parser - ENDS here
 
-            ((and
-              previous-token
-              (equal (car previous-token) 'ASSIGNMENT)
-              previous-previous-token
-              (equal (car previous-previous-token) 'RETURN))
-             (push token-value emacs-lisp)))))
-
-        (setq previous-previous-token previous-token)
-        (setq previous-token token)))
-
-    ;; (message "Items: %s" emacs-lisp)
-
-    (let ((emacs-lisp-string ""))
-      (dolist
-          (item (nreverse emacs-lisp))
-        (setq
-         emacs-lisp-string
-         (format
-          "%s%s"
-          emacs-lisp-string
-          item)))
-      emacs-lisp-string)))
 
 (defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header prefix)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified, use PREFIX if specified.  Return the conversion as a string."
