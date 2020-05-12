@@ -301,8 +301,8 @@
   (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
   (unless namespace
     (setq namespace ""))
-  (let ((return-string "")
-        (return-block ""))
+  (let ((return-string nil)
+        (return-block nil))
     (while emacs-wisent-grammar-converter--lexer-tokens-stack
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
              (token-id (car token))
@@ -331,17 +331,19 @@
            (setq
             return-block
             (emacs-wisent-grammar-converter--return namespace)))
-          ('SEMICOLON
-           (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-          (_ (signal 'error (list (format "Unexpected token %d" token)))))))
+          ('SEMICOLON)
+          (_ (signal 'error (list (format "Unexpected token %s" token)))))))
 
     ;; Return-block is placed last in block
     (when return-block
-      (setq
-       return-string
-       (concat
-        return-string
-        return-block)))
+      (if return-string
+          (setq
+           return-string
+           (concat
+            return-string
+            " "
+            return-block))
+        (setq return-string return-block)))
 
     (format "(%s)" return-string)))
 

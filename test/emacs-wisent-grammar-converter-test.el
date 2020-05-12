@@ -300,7 +300,7 @@
            "(nil)"))
   (message "Passed test: (nil)")
 
-   ;; ;; Parameter assignments like $1 = zend_attr:
+   ;;Parameter assignments like $1 = zend_attr:
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -311,20 +311,20 @@
            "((setq $1 zend_attr))"))
   (message "Passed test: ((setq $1 zend_attr))")
 
-  ;; TODO Re-think this about attributes
-  
-  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  ;; Place return statements last in block    $$ = ...
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
              (list 'RETURN "$$")
-             (list 'MEMBER_OPERATOR "->")
-             (list 'VARIABLE "attr")
              (list 'ASSIGNMENT "=")
-             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+             (list 'PARAMETER "$1")
+             (list 'SEMICOLON ";")
+             (list 'PARAMETER "$1")
+             (list 'ASSIGNMENT "=")
+             (list 'VARIABLE "zend_attr")
              (list 'SEMICOLON ";")))
-           "((put $$ 'attr 'ZEND_NAME_NOT_FQ) $$)"))
-  (message "Passed test: ((setq $1 zend_attr))")
+           "((setq $1 zend_attr) $1)"))
+  (message "Passed test: ((setq $1 zend_attr) $1)")
 
   ;; ;; TODO Logical or like    $1 | $2
   ;; (should (equal
@@ -350,12 +350,6 @@
   ;;          (emacs-wisent-grammar-converter--reformat-logic-block
   ;;           "  1 ? 2 : 0  	\n\n")))
 
-  ;; ;; TODO Place return statements last in block    $$ = ...
-  ;; (should (equal
-  ;;          "(a)(b)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  $$ = b(); a();")))
-
   ;; ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
   ;; (should (equal
   ;;          "(CG exra_fn_lags 0)"
@@ -375,6 +369,22 @@
   ;;           "	*SYMBOL")))
 
   ;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
+
+
+  ;; TODO Re-think this about attributes
+  
+  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'MEMBER_OPERATOR "->")
+             (list 'VARIABLE "attr")
+             (list 'ASSIGNMENT "=")
+             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+             (list 'SEMICOLON ";")))
+           "((put $$ 'attr 'ZEND_NAME_NOT_FQ) $$)"))
+  (message "Passed test: ((setq $1 zend_attr))")
 
   )
 
