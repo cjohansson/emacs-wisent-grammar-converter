@@ -301,7 +301,8 @@
   (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
   (unless namespace
     (setq namespace ""))
-  (let ((return-string ""))
+  (let ((return-string "")
+        (return-block ""))
     (while emacs-wisent-grammar-converter--lexer-tokens-stack
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
              (token-id (car token))
@@ -322,14 +323,21 @@
              (emacs-wisent-grammar-converter--variable token-value namespace))))
           ('RETURN
            (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--return  namespace))))
+            return-block
+            (emacs-wisent-grammar-converter--return namespace)))
           ('SEMICOLON
            (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
           (_ (signal 'error (list (format "Unexpected token %d" token)))))))
-    return-string))
+
+    ;; Return-block is placed last in block
+    (when return-block
+      (setq
+       return-string
+       (concat
+        return-string
+        return-block)))
+
+    (format "(%s)" return-string)))
 
 (defun emacs-wisent-grammar-converter--variable (name namespace)
   "Recursive decent for variable NAME with NAMESPACE."
@@ -358,9 +366,7 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('ASSIGNMENT
-       (format
-        "(%s)"
-        (emacs-wisent-grammar-converter--assignment namespace)))
+       (emacs-wisent-grammar-converter--assignment namespace))
       ('MEMBER_OPERATOR
        (format
         "(put '%s)"

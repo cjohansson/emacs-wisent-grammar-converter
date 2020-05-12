@@ -221,8 +221,8 @@
              (list 'OPEN_PARENTHESIS "(")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(mask)"))
-  (message "Passed test: (mask)")
+           "((mask))"))
+  (message "Passed test: ((mask))")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -232,8 +232,8 @@
              (list 'VARIABLE "zv")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(mask zv)"))
-  (message "Passed test: (mask zv)")
+           "((mask zv))"))
+  (message "Passed test: ((mask zv))")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -244,8 +244,8 @@
              (list 'PARAMETER "$2")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(mask zv $2)"))
-  (message "Passed test: (mask zv $2)")
+           "((mask zv $2))"))
+  (message "Passed test: ((mask zv $2))")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -262,8 +262,8 @@
              (list 'VARIABLE "zv3")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(mask (mask2 zv zv2) zv3)"))
-  (message "Passed test: (mask (mask2 zv zv2) zv3)")
+           "((mask (mask2 zv zv2) zv3))"))
+  (message "Passed test: ((mask (mask2 zv zv2) zv3))")
 
   ;; Test function and variable prefix
   (should (equal
@@ -275,8 +275,8 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";"))
             "namespace-")
-           "(namespace-mask namespace-zv)"))
-  (message "Passed test: (namespace-mask namespace-zv)")
+           "((namespace-mask namespace-zv))"))
+  (message "Passed test: ((namespace-mask namespace-zv))")
 
   ;; Return a argument
   (should (equal
@@ -287,7 +287,7 @@
              (list 'PARAMETER "$3")
              (list 'SEMICOLON ";")))
            "($3)"))
-  (message "Passed test: $3")
+  (message "Passed test: ($3)")
 
   ;; NULL values like    ($$ = NULL)
   (should (equal
@@ -308,8 +308,8 @@
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "zend_attr")
              (list 'SEMICOLON ";")))
-           "(setq $1 'zend_attr)"))
-  (message "Passed test: (setq $1 'zend_attr)")
+           "((setq $1 'zend_attr))"))
+  (message "Passed test: ((setq $1 'zend_attr))")
 
   ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
   (should (equal
@@ -383,3 +383,4 @@
 
 (provide 'emacs-wisent-grammar-converter-test)
 ;;; emacs-wisent-grammar-converter-test.el ends here
+e
