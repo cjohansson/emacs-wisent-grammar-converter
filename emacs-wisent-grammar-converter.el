@@ -299,11 +299,14 @@
 (defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens &optional namespace)
   "Convert Bison grammar TOKENS into emacs-lisp using a recursive decent parser for each statement."
   (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
+  (unless namespace
+    (setq namespace ""))
   (let ((return-string ""))
     (while emacs-wisent-grammar-converter--lexer-tokens-stack
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-             (token-id (car emacs-wisent-grammar-converter--lexer-tokens-stack))
-             (token-value (car (cdr emacs-wisent-grammar-converter--lexer-tokens-stack))))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        ;; (message "token %s, id: %s, value: %s" token token-id token-value)
         (pcase token-id
           ('FUNCTION
            (setq
@@ -325,7 +328,7 @@
              (emacs-wisent-grammar-converter--return  namespace))))
           ('SEMICOLON
            (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-          (_ (message "Unexpected token %d" token)))))
+          (_ (signal 'error (list (format "Unexpected token %d" token)))))))
     return-string))
 
 (defun emacs-wisent-grammar-converter--variable (name namespace)
@@ -346,7 +349,7 @@
         namespace
         name
         (emacs-wisent-grammar-converter--member-operator namespace)))
-      (_ (message "Unexpected variable token %s" token)))))
+      (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--return (namespace)
   "Recursive decent for return NAME with NAMESPACE."
@@ -357,20 +360,17 @@
       ('ASSIGNMENT
        (format
         "(%s)"
-        namespace
-        name
         (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
-        "(put %s%s '%s)"
-        namespace
-        name
+        "(put '%s)"
         (emacs-wisent-grammar-converter--assignment namespace)))
-      (_ (message "Unexpected variable token %s" token)))))
+      (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--function (name namespace)
-  "Recursive decent for function NAME  and NAMESPACE."
-  (let* ((token (car (pop emacs-wisent-grammar-converter--lexer-tokens-stack)))
+  "Parse function NAME and NAMESPACE."
+  (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
          (token-id (car token))
          (token-value (car (cdr token))))
     (pcase token-id
@@ -379,13 +379,58 @@
         "(%s%s)"
         namespace
         name))
-      (_ (format
+      (_
+       (push token emacs-wisent-grammar-converter--lexer-tokens-stack)
+       (format
           "(%s%s %s)"
           namespace
           name
-          (emacs-wisent-grammar-converter--function-argument token namespace))))))
+          (emacs-wisent-grammar-converter--function-arguments token namespace))))))
 
-(defun emacs-wisent-grammar-converter--assignment ( namespace)
+(defun emacs-wisent-grammar-converter--function-arguments (token namespace)
+  "Parse function arguments starting at TOKEN with NAMESPACE."
+  (let ((return-string "")
+        (return-count 0)
+        (continue t))
+    (while (and continue
+                emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('COMMA)
+          ('VARIABLE
+           (when (> return-count 0)
+             (setq return-string (concat return-string " ")))
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              "%s%s"
+              namespace
+              token-value)))
+           (setq return-count (1+ return-count)))
+          ('PARAMETER
+           (when (> return-count 0)
+             (setq return-string (concat return-string " ")))
+           (setq return-string (concat return-string token-value))
+           (setq return-count (1+ return-count)))
+          ('FUNCTION
+           (when (> return-count 0)
+             (setq return-string (concat return-string " ")))
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--function token-value namespace)))
+           (setq return-count (1+ return-count)))
+          ('CLOSE_PARENTHESIS
+           (setq continue nil))
+          (_ (signal 'error (list (format "Unexpected function arguments token: %s" token)))))))
+    return-string))
+
+(defun emacs-wisent-grammar-converter--assignment (namespace)
   "Recursive descent for assignment  using NAMESPACE."
   (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
          (token-id (car token))
@@ -393,7 +438,9 @@
     (pcase token-id
       ('PARAMETER
        token-value)
-      (_ (message "Unexpected variable token %s" token)))))
+      ('NULL
+       "nil")
+      (_ (signal 'error (list (format "Unexpected assignment token: %s" token)))))))
 
 
 ;; NOTE Recursive descent parser - ENDS here

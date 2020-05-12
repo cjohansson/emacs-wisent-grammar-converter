@@ -222,6 +222,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(mask)"))
+  (message "Passed test: (mask)")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -232,6 +233,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(mask zv)"))
+  (message "Passed test: (mask zv)")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -243,6 +245,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(mask zv $2)"))
+  (message "Passed test: (mask zv $2)")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -260,6 +263,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(mask (mask2 zv zv2) zv3)"))
+  (message "Passed test: (mask (mask2 zv zv2) zv3)")
 
   ;; Test function and variable prefix
   (should (equal
@@ -272,6 +276,7 @@
              (list 'SEMICOLON ";"))
             "namespace-")
            "(namespace-mask namespace-zv)"))
+  (message "Passed test: (namespace-mask namespace-zv)")
 
   ;; Return a argument
   (should (equal
@@ -281,7 +286,8 @@
              (list 'ASSIGNMENT "=")
              (list 'PARAMETER "$3")
              (list 'SEMICOLON ";")))
-           "$3"))
+           "($3)"))
+  (message "Passed test: $3")
 
   ;; NULL values like    ($$ = NULL)
   (should (equal
@@ -291,7 +297,8 @@
              (list 'ASSIGNMENT "=")
              (list 'NULL "null")
              (list 'SEMICOLON ";")))
-           "nil"))
+           "(nil)"))
+  (message "Passed test: (nil)")
 
    ;; ;; Parameter assignments like $1 = zend_attr:
   (should (equal
@@ -302,6 +309,7 @@
              (list 'VARIABLE "zend_attr")
              (list 'SEMICOLON ";")))
            "(setq $1 'zend_attr)"))
+  (message "Passed test: (setq $1 'zend_attr)")
 
   ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
   (should (equal
