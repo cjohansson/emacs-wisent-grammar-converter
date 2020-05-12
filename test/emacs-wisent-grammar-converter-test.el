@@ -210,6 +210,18 @@
             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
             (list 'SEMICOLON ";"))))
 
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "	  \n$$->attr |= ZEND_TYPE_NULLABLE;	\n  "
+            )
+           (list
+            (list 'RETURN "$$")
+            (list 'MEMBER_OPERATOR "->")
+            (list 'VARIABLE "attr")
+            (list 'BITWISE_OR_ASSIGNMENT "|=")
+            (list 'VARIABLE "ZEND_TYPE_NULLABLE")
+            (list 'SEMICOLON ";"))))
+
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
@@ -300,6 +312,12 @@
            "(nil)"))
   (message "Passed test: (nil)")
 
+  ;; TODO Define all parameters and return as property-lists
+
+  ;; TODO Save return-value in variable and return it, make sure return-value supports attributes, use plist like '(a b c d) (plist-put) (plist-get)
+
+  ;; TODO Support |=
+
    ;;Parameter assignments like $1 = zend_attr:
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -311,6 +329,23 @@
            "((setq $1 zend_attr))"))
   (message "Passed test: ((setq $1 zend_attr))")
 
+   ;;Parameter assignments like $$ = zend_ast_append_str($1, $3);
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'FUNCTION "zend_ast_append_str")
+             (list 'OPEN_PARENTHESIS)
+             (list 'PARAMETER "$1")
+             (list 'COMMA ",")
+             (list 'PARAMETER "$3")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'SEMICOLON ";")))
+           "((zend_ast_append_str $1 $3))"))
+  (message "Passed test: ((zend_ast_append_str $1 $3))")
+
+
   ;; Place return statements last in block    $$ = ...
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -320,8 +355,10 @@
              (list 'PARAMETER "$1")
              (list 'SEMICOLON ";")
              (list 'PARAMETER "$1")
+             (list 'MEMBER_OPERATOR "->")
+             (list 'VARIABLE "attr")
              (list 'ASSIGNMENT "=")
-             (list 'VARIABLE "zend_attr")
+             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
              (list 'SEMICOLON ";")))
            "((setq $1 zend_attr) $1)"))
   (message "Passed test: ((setq $1 zend_attr) $1)")
