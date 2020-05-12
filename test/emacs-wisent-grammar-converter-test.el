@@ -308,9 +308,11 @@
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "zend_attr")
              (list 'SEMICOLON ";")))
-           "((setq $1 'zend_attr))"))
-  (message "Passed test: ((setq $1 'zend_attr))")
+           "((setq $1 zend_attr))"))
+  (message "Passed test: ((setq $1 zend_attr))")
 
+  ;; TODO Re-think this about attributes
+  
   ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -321,7 +323,8 @@
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "ZEND_NAME_NOT_FQ")
              (list 'SEMICOLON ";")))
-           "(put $$ 'attr 'ZEND_NAME_NOT_FQ) $$"))
+           "((put $$ 'attr 'ZEND_NAME_NOT_FQ) $$)"))
+  (message "Passed test: ((setq $1 zend_attr))")
 
   ;; ;; TODO Logical or like    $1 | $2
   ;; (should (equal

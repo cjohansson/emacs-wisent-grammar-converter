@@ -297,7 +297,7 @@
   "A stack of lexer tokens to parse.")
 
 (defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens &optional namespace)
-  "Convert Bison grammar TOKENS into emacs-lisp using a recursive decent parser for each statement."
+  "Convert Bison grammar TOKENS into emacs-lisp using parser for each statement."
   (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
   (unless namespace
     (setq namespace ""))
@@ -321,6 +321,12 @@
             (concat
              return-string
              (emacs-wisent-grammar-converter--variable token-value namespace))))
+          ('PARAMETER
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--parameter token-value namespace))))
           ('RETURN
            (setq
             return-block
@@ -340,10 +346,10 @@
     (format "(%s)" return-string)))
 
 (defun emacs-wisent-grammar-converter--variable (name namespace)
-  "Recursive decent for variable NAME with NAMESPACE."
+  "Parse variable NAME in NAMESPACE."
   (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-         ((token-id (car token)))
-         ((token-value (car (cdr token)))))
+         (token-id (car token))
+         (token-value (car (cdr token))))
     (pcase token-id
       ('ASSIGNMENT
        (format
@@ -359,8 +365,26 @@
         (emacs-wisent-grammar-converter--member-operator namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
+(defun emacs-wisent-grammar-converter--parameter (name namespace)
+  "Parse parameter NAME in NAMESPACE."
+  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+         (token-id (car token))
+         (token-value (car (cdr token))))
+    (pcase token-id
+      ('ASSIGNMENT
+       (format
+        "(setq %s %s)"
+        name
+        (emacs-wisent-grammar-converter--assignment namespace)))
+      ('MEMBER_OPERATOR
+       (format
+        "(put %s '%s)"
+        name
+        (emacs-wisent-grammar-converter--member-operator namespace)))
+      (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
+
 (defun emacs-wisent-grammar-converter--return (namespace)
-  "Recursive decent for return NAME with NAMESPACE."
+  "Parse return in NAMESPACE."
   (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
          (token-id (car token))
          (token-value (car (cdr token))))
@@ -444,6 +468,13 @@
     (pcase token-id
       ('PARAMETER
        token-value)
+      ('VARIABLE
+       (format
+        "%s%s"
+        namespace
+        token-value))
+      ('FUNCTION
+       (emacs-wisent-grammar-converter--function token-value namespace))
       ('NULL
        "nil")
       (_ (signal 'error (list (format "Unexpected assignment token: %s" token)))))))
