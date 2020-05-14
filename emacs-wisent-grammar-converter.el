@@ -396,7 +396,7 @@
         "(put %s%s '%s)"
         namespace
         name
-        (emacs-wisent-grammar-converter--member-operator namespace)))
+        (emacs-wisent-grammar-converter--member-operator name namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--parameter (name namespace)
@@ -414,7 +414,9 @@
        (format
         "(plist-put %s %s)"
         (emacs-wisent-grammar-converter--parameter-to-plist name)
-        (emacs-wisent-grammar-converter--member-operator namespace)))
+        (emacs-wisent-grammar-converter--member-operator
+         (emacs-wisent-grammar-converter--parameter-to-plist name)
+         namespace)))
       (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--return (namespace)
@@ -430,7 +432,9 @@
       ('MEMBER_OPERATOR
        (format
         "(plist-put return-string %s)"
-        (emacs-wisent-grammar-converter--member-operator namespace)))
+        (emacs-wisent-grammar-converter--member-operator
+         "return-item"
+         namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--function (name namespace)
@@ -520,10 +524,11 @@
       (_ (signal 'error (list (format "Unexpected assignment token: %s" token)))))))
 
 ;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
-(defun emacs-wisent-grammar-converter--member-operator (namespace)
-  "Parse member-operator using NAMESPACE."
+(defun emacs-wisent-grammar-converter--member-operator (parent namespace)
+  "Parse member-operator of PARENT using NAMESPACE."
   (let ((continue t)
-        (return-string ""))
+        (return-string "")
+        (variable ""))
     (while (and
             continue
             emacs-wisent-grammar-converter--lexer-tokens-stack)
@@ -537,7 +542,32 @@
             (concat
              return-string
              "'"
-             token-value)))
+             token-value))
+           (setq variable token-value))
+          ('BITWISE_OR_ASSIGNMENT
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              " (logior (plist-get %s '%s) "
+              parent
+              variable)
+             (emacs-wisent-grammar-converter--assignment namespace)
+             ")"))
+           (setq continue nil))
+          ('BITWISE_AND_ASSIGNMENT
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              " (logand (plist-get %s '%s) "
+              parent
+              variable)
+             (emacs-wisent-grammar-converter--assignment namespace)
+             ")"))
+           (setq continue nil))
           ('ASSIGNMENT
            (setq
             return-string

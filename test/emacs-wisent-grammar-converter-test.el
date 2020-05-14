@@ -352,9 +352,34 @@
            "(let ((parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value parameter-1)(plist-put return-string 'attr 'ZEND_NAME_NOT_FQ) return-item)"))
   (message "Passed test: set return-item to parameter and then change attribute of return-item")
 
-  ;; TODO Support |=
+  ;; Support things like    $$ = $2; $$->attr |= ZEND_TYPE_NULLABLE;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'PARAMETER "$2")
+             (list 'SEMICOLON ";")
+             (list 'RETURN "$$")
+             (list 'MEMBER_OPERATOR "->")
+             (list 'VARIABLE "attr")
+             (list 'BITWISE_OR_ASSIGNMENT "|=")
+             (list 'VARIABLE "ZEND_TYPE_NULLABLE")
+             (list 'SEMICOLON ";")))
+           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) 'ZEND_TYPE_NULLABLE)) return-item)"))
+  (message "Passed test: set return-item to parameter and then change attribute with a bitwise or assignment of return-item")
 
-  ;; ;; TODO Logical or like    $1 | $2
+  ;; TODO CG(extra_fn_flags) = $9;
+
+  ;; TODO CG(extra_fn_flags) |= ZEND_ACC_GENERATOR;
+
+  ;; TODO $$ |= ZEND_ACC_PUBLIC;
+
+  ;; TODO CG(extra_fn_flags) |= ZEND_ACC_GENERATOR;
+
+  ;; TODO stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
+  ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
+  ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
 
   ;; TODO Doc comments like    /* allow single trailing comma */ (zend_ast_list_
   ;; TODO Ternary operator    1 ? 2 : 0
