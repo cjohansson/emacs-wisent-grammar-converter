@@ -371,7 +371,9 @@
           ('RETURN
            (setq
             return-string
-            (emacs-wisent-grammar-converter--return namespace)))
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--return namespace))))
           ('SEMICOLON)
           (_ (signal 'error (list (format "Unexpected token %s" token)))))))
 
@@ -404,14 +406,14 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('ASSIGNMENT
-       (formatﬁ
+       (format
         "(plist-put %s 'value %s)"
         (emacs-wisent-grammar-converter--parameter-to-plist name)
         (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
-        "(put %s '%s)"
-        name
+        "(plist-put %s '%s)" ;; TODO Fix this
+        (emacs-wisent-grammar-converter--parameter-to-plist name)
         (emacs-wisent-grammar-converter--member-operator namespace)))
       (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
 
@@ -422,10 +424,12 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('ASSIGNMENT
-       (emacs-wisent-grammar-converter--assignment namespace))
+       (format
+        "(plist-put return-item 'value %s)"
+        (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
-        "(put '%s)"
+        "(plist-put return-string '%s)" ;; TODO Fix this
         (emacs-wisent-grammar-converter--assignment namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
@@ -503,7 +507,7 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('PARAMETER
-       token-value)
+        (emacs-wisent-grammar-converter--parameter-to-plist token-value))
       ('VARIABLE
        (format
         "%s%s"

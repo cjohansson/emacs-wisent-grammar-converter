@@ -298,7 +298,7 @@
              (list 'ASSIGNMENT "=")
              (list 'PARAMETER "$3")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(setq return-item parameter-3) return-item)"))
+           "(let ((parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value parameter-3) return-item)"))
   (message "Passed test: Assign return-value value of parameter")
 
   ;; NULL values like    ($$ = NULL)
@@ -309,27 +309,10 @@
              (list 'ASSIGNMENT "=")
              (list 'NULL "null")
              (list 'SEMICOLON ";")))
-           "(nil)"))
-  (message "Passed test: (nil)")
+           "(let ((return-item '(value $$)))(plist-put return-item 'value nil) return-item)"))
+  (message "Passed test: assign return-value nil")
 
-  ;; TODO Define all parameters and return as property-lists
-
-  ;; TODO Save return-value in variable and return it, make sure return-value supports attributes, use plist like '(a b c d) (plist-put) (plist-get)
-
-  ;; TODO Support |=
-
-   ;;Parameter assignments like $1 = zend_attr:
-  (should (equal
-           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
-            (list
-             (list 'PARAMETER "$1")
-             (list 'ASSIGNMENT "=")
-             (list 'VARIABLE "zend_attr")
-             (list 'SEMICOLON ";")))
-           "((setq $1 zend_attr))"))
-  (message "Passed test: ((setq $1 zend_attr))")
-
-   ;;Parameter assignments like $$ = zend_ast_append_str($1, $3);
+  ;;Parameter assignments like $$ = zend_ast_append_str($1, $3);
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -342,9 +325,21 @@
              (list 'PARAMETER "$3")
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           "((zend_ast_append_str $1 $3))"))
-  (message "Passed test: ((zend_ast_append_str $1 $3))")
+           "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_append_str parameter-1 parameter-3)) return-item)"))
+  (message "Passed test: assign return-value function-call with parameter arguments")
 
+  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'MEMBER_OPERATOR "->")
+             (list 'VARIABLE "attr")
+             (list 'ASSIGNMENT "=")
+             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+             (list 'SEMICOLON ";")))
+           "((put $$ 'attr 'ZEND_NAME_NOT_FQ) $$)"))
+  (message "Passed test: ((setq $1 zend_attr))")
 
   ;; Place return statements last in block    $$ = ...
   (should (equal
@@ -363,66 +358,17 @@
            "((setq $1 zend_attr) $1)"))
   (message "Passed test: ((setq $1 zend_attr) $1)")
 
+  ;; TODO Support |=
+
   ;; ;; TODO Logical or like    $1 | $2
-  ;; (should (equal
-  ;;          "(logior $1 $2)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  $1 | $2  	\n\n")))
 
-  ;; ;; TODO Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
-  ;; (should (equal
-  ;;          ";; allow single trailing comma\n(zend_ast_list_rtrim $1)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "/* allow single trailing comma */ (zend_ast_list_rtrim $1)")))
-
-  ;; ;; TODO Return function call
-  ;; (should (equal
-  ;;          "(zend_ast_create ZEND_AST_EMPTY $3)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  $$ = zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
-
-  ;; ;; TODO Syntactic sugar like    1 ? 2 : 0
-  ;; (should (equal
-  ;;          "(if 1 2 0)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "  1 ? 2 : 0  	\n\n")))
-
-  ;; ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
-  ;; (should (equal
-  ;;          "(CG exra_fn_lags 0)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "CG(extra_fn_lags) = 0;")))
-
-  ;; ;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR -> (CG extra_fn_flags (bitwise-or (CG extra_fn_lags)))
-  ;; (should (equal
-  ;;          "(CG exra_fn_lags (bitwise-or (CG extra_fn_lags) ZEND_ACC_GENERATOR))"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "	(CG extra_fn_lags) |= ZEND_ACC_GENERATOR")))
-
-  ;; ;; TODO Dereferenced pointers like    (zend_ast *decl ?
-  ;; (should (equal
-  ;;          "(symbol-value SYMBOL)"
-  ;;          (emacs-wisent-grammar-converter--reformat-logic-block
-  ;;           "	*SYMBOL")))
-
+  ;; TODO Doc comments like    /* allow single trailing comma */ (zend_ast_list_
+  ;; TODO Ternary operator    1 ? 2 : 0
+  ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
+  ;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR -> (CG extra_fn_flags (bitwise-or (CG extra_fn_lags)))
+  ;; TODO Dereferenced pointers like    (zend_ast *decl ?
   ;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
-
-
-  ;; TODO Re-think this about attributes
   
-  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
-  (should (equal
-           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
-            (list
-             (list 'RETURN "$$")
-             (list 'MEMBER_OPERATOR "->")
-             (list 'VARIABLE "attr")
-             (list 'ASSIGNMENT "=")
-             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
-             (list 'SEMICOLON ";")))
-           "((put $$ 'attr 'ZEND_NAME_NOT_FQ) $$)"))
-  (message "Passed test: ((setq $1 zend_attr))")
-
   )
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
@@ -433,4 +379,3 @@
 
 (provide 'emacs-wisent-grammar-converter-test)
 ;;; emacs-wisent-grammar-converter-test.el ends here
-e
