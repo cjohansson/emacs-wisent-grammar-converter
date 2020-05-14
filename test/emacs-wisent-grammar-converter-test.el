@@ -233,8 +233,8 @@
              (list 'OPEN_PARENTHESIS "(")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "((mask))"))
-  (message "Passed test: ((mask))")
+           "(let ((return-item '(value $$)))(mask) return-item)"))
+  (message "Passed test: function-call without arguments")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -244,8 +244,8 @@
              (list 'VARIABLE "zv")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "((mask zv))"))
-  (message "Passed test: ((mask zv))")
+           "(let ((return-item '(value $$)))(mask zv) return-item)"))
+  (message "Passed test: function-call with one argument")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -256,8 +256,8 @@
              (list 'PARAMETER "$2")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "((mask zv $2))"))
-  (message "Passed test: ((mask zv $2))")
+           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(mask zv parameter-2) return-item)"))
+  (message "Passed test: function-call with two arguments")
 
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -274,8 +274,8 @@
              (list 'VARIABLE "zv3")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "((mask (mask2 zv zv2) zv3))"))
-  (message "Passed test: ((mask (mask2 zv zv2) zv3))")
+           "(let ((return-item '(value $$)))(mask (mask2 zv zv2) zv3) return-item)"))
+  (message "Passed test: nested function call")
 
   ;; Test function and variable prefix
   (should (equal
@@ -287,8 +287,8 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";"))
             "namespace-")
-           "((namespace-mask namespace-zv))"))
-  (message "Passed test: ((namespace-mask namespace-zv))")
+           "(let ((return-item '(value $$)))(namespace-mask namespace-zv) return-item)"))
+  (message "Passed test: function-call with argument and namespace")
 
   ;; Return a argument
   (should (equal
@@ -298,8 +298,8 @@
              (list 'ASSIGNMENT "=")
              (list 'PARAMETER "$3")
              (list 'SEMICOLON ";")))
-           "($3)"))
-  (message "Passed test: ($3)")
+           "(let ((return-item '(value $$)))(setq return-item parameter-3) return-item)"))
+  (message "Passed test: Assign return-value value of parameter")
 
   ;; NULL values like    ($$ = NULL)
   (should (equal

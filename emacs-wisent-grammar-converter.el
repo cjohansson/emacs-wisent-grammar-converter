@@ -296,13 +296,54 @@
 (defvar emacs-wisent-grammar-converter--lexer-tokens-stack nil
   "A stack of lexer tokens to parse.")
 
+(defun emacs-wisent-grammar-converter--parameter-to-plist (parameter)
+  "Convert PARAMETER to corresponding property-list variable."
+  (format
+   "parameter-%s"
+   (replace-regexp-in-string
+    "\\$"
+    ""
+    parameter)))
+
 (defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens &optional namespace)
   "Convert Bison grammar TOKENS into emacs-lisp using parser for each statement."
   (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
+
+  ;; Set default value for namespace
   (unless namespace
     (setq namespace ""))
+  
   (let ((return-string nil)
-        (return-block nil))
+        (property-items '(("return-item" "$$"))))
+
+    ;; Generate list of every parameter and return variable in block
+    (dolist (item emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (when (equal (car item) 'PARAMETER)
+        (let* ((property-value (car (cdr item)))
+               (property-name
+                (emacs-wisent-grammar-converter--parameter-to-plist property-value)))
+          (push (list
+                 property-name
+                 property-value)
+                property-items))))
+
+    ;; Initialize all parameters and return value as property-lists
+    (setq return-string "(let (")
+    (dolist (item property-items)
+      (setq
+       return-string
+       (concat
+        return-string
+        (format
+         "(%s '(value %s))"
+         (car item)
+         (car (cdr item))))))
+    (setq
+     return-string
+     (concat
+      return-string
+      ")"))
+
     (while emacs-wisent-grammar-converter--lexer-tokens-stack
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
              (token-id (car token))
@@ -329,23 +370,12 @@
              (emacs-wisent-grammar-converter--parameter token-value namespace))))
           ('RETURN
            (setq
-            return-block
+            return-string
             (emacs-wisent-grammar-converter--return namespace)))
           ('SEMICOLON)
           (_ (signal 'error (list (format "Unexpected token %s" token)))))))
 
-    ;; Return-block is placed last in block
-    (when return-block
-      (if return-string
-          (setq
-           return-string
-           (concat
-            return-string
-            " "
-            return-block))
-        (setq return-string return-block)))
-
-    (format "(%s)" return-string)))
+    (format "%s return-item)" return-string)))
 
 (defun emacs-wisent-grammar-converter--variable (name namespace)
   "Parse variable NAME in NAMESPACE."
@@ -374,9 +404,9 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('ASSIGNMENT
-       (format
-        "(setq %s %s)"
-        name
+       (formatﬁ
+        "(plist-put %s 'value %s)"
+        (emacs-wisent-grammar-converter--parameter-to-plist name)
         (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
@@ -446,7 +476,11 @@
           ('PARAMETER
            (when (> return-count 0)
              (setq return-string (concat return-string " ")))
-           (setq return-string (concat return-string token-value))
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
            (setq return-count (1+ return-count)))
           ('FUNCTION
            (when (> return-count 0)
