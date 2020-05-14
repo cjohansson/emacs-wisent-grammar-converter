@@ -291,7 +291,7 @@
           (setq continue nil)))))
     (nreverse tokens)))
 
-;; NOTE Recursive descent parser - BEGINS here
+;; NOTE Recursive shift/reduce parser - BEGINS here
 
 (defvar emacs-wisent-grammar-converter--lexer-tokens-stack nil
   "A stack of lexer tokens to parse.")
@@ -375,7 +375,7 @@
              return-string
              (emacs-wisent-grammar-converter--return namespace))))
           ('SEMICOLON)
-          (_ (signal 'error (list (format "Unexpected token %s" token)))))))
+          (_ (signal 'error (list (format "Unexpected root token %s" token)))))))
 
     (format "%s return-item)" return-string)))
 
@@ -412,7 +412,7 @@
         (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
-        "(plist-put %s '%s)" ;; TODO Fix this
+        "(plist-put %s %s)"
         (emacs-wisent-grammar-converter--parameter-to-plist name)
         (emacs-wisent-grammar-converter--member-operator namespace)))
       (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
@@ -429,8 +429,8 @@
         (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
-        "(plist-put return-string '%s)" ;; TODO Fix this
-        (emacs-wisent-grammar-converter--assignment namespace)))
+        "(plist-put return-string %s)"
+        (emacs-wisent-grammar-converter--member-operator namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--function (name namespace)
@@ -501,7 +501,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter--assignment (namespace)
-  "Recursive descent for assignment  using NAMESPACE."
+  "Parse assignment using NAMESPACE."
   (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
          (token-id (car token))
          (token-value (car (cdr token))))
@@ -510,7 +510,7 @@
         (emacs-wisent-grammar-converter--parameter-to-plist token-value))
       ('VARIABLE
        (format
-        "%s%s"
+        "'%s%s"
         namespace
         token-value))
       ('FUNCTION
@@ -519,8 +519,47 @@
        "nil")
       (_ (signal 'error (list (format "Unexpected assignment token: %s" token)))))))
 
+;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
+(defun emacs-wisent-grammar-converter--member-operator (namespace)
+  "Parse member-operator using NAMESPACE."
+  (let ((continue t)
+        (return-string ""))
+    (while (and
+            continue
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('VARIABLE
+           (setq
+            return-string
+            (concat
+             return-string
+             "'"
+             token-value)))
+          ('ASSIGNMENT
+           (setq
+            return-string
+            (concat
+             return-string
+             " "
+             (emacs-wisent-grammar-converter--assignment namespace)))
+            (setq continue nil))
+          ('SEMICOLON
+           (setq continue nil)
+           (push token emacs-wisent-grammar-converter--lexer-tokens-stack))
+          ('COMMA
+           (setq continue nil)
+           (push token emacs-wisent-grammar-converter--lexer-tokens-stack))
+          ('CLOSE_PARENTHESIS
+           (setq continue nil)
+           (push token emacs-wisent-grammar-converter--lexer-tokens-stack))
+          (_ (signal 'error (list (format "Unexpected member-operator token: %s" token)))))))
+    return-string))
 
-;; NOTE Recursive descent parser - ENDS here
+
+;; NOTE Shift/reduce parser - ENDS here
 
 
 (defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header prefix)

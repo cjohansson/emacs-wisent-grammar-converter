@@ -275,9 +275,8 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(let ((return-item '(value $$)))(mask (mask2 zv zv2) zv3) return-item)"))
-  (message "Passed test: nested function call")
+  (message "Passed test: nested function calls")
 
-  ;; Test function and variable prefix
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -290,7 +289,6 @@
            "(let ((return-item '(value $$)))(namespace-mask namespace-zv) return-item)"))
   (message "Passed test: function-call with argument and namespace")
 
-  ;; Return a argument
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -299,9 +297,8 @@
              (list 'PARAMETER "$3")
              (list 'SEMICOLON ";")))
            "(let ((parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value parameter-3) return-item)"))
-  (message "Passed test: Assign return-value value of parameter")
+  (message "Passed test: assign return-value value of parameter")
 
-  ;; NULL values like    ($$ = NULL)
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -310,9 +307,8 @@
              (list 'NULL "null")
              (list 'SEMICOLON ";")))
            "(let ((return-item '(value $$)))(plist-put return-item 'value nil) return-item)"))
-  (message "Passed test: assign return-value nil")
+  (message "Passed test: assign return-value value of nil")
 
-  ;;Parameter assignments like $$ = zend_ast_append_str($1, $3);
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -328,7 +324,6 @@
            "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_append_str parameter-1 parameter-3)) return-item)"))
   (message "Passed test: assign return-value function-call with parameter arguments")
 
-  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -338,10 +333,9 @@
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "ZEND_NAME_NOT_FQ")
              (list 'SEMICOLON ";")))
-           "((put $$ 'attr 'ZEND_NAME_NOT_FQ) $$)"))
-  (message "Passed test: ((setq $1 zend_attr))")
+           "(let ((return-item '(value $$)))(plist-put return-string 'attr 'ZEND_NAME_NOT_FQ) return-item)"))
+  (message "Passed test: set attribute of return-item")
 
-  ;; Place return statements last in block    $$ = ...
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -349,14 +343,14 @@
              (list 'ASSIGNMENT "=")
              (list 'PARAMETER "$1")
              (list 'SEMICOLON ";")
-             (list 'PARAMETER "$1")
+             (list 'RETURN "$$")
              (list 'MEMBER_OPERATOR "->")
              (list 'VARIABLE "attr")
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "ZEND_NAME_NOT_FQ")
              (list 'SEMICOLON ";")))
-           "((setq $1 zend_attr) $1)"))
-  (message "Passed test: ((setq $1 zend_attr) $1)")
+           "(let ((parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value parameter-1)(plist-put return-string 'attr 'ZEND_NAME_NOT_FQ) return-item)"))
+  (message "Passed test: set return-item to parameter and then change attribute of return-item")
 
   ;; TODO Support |=
 
