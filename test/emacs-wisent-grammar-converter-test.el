@@ -222,6 +222,46 @@
             (list 'VARIABLE "ZEND_TYPE_NULLABLE")
             (list 'SEMICOLON ";"))))
 
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            " $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); ")
+           (list
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "zend_ast_create")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'VARIABLE "ZEND_AST_PROP_ELEM")
+            (list 'COMMA ",")
+            (list 'PARAMETER "$1")
+            (list 'COMMA ",")
+            (list 'NULL "NULL")
+            (list 'COMMA ",")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'PARAMETER "$2")
+            (list 'QUESTION_MARK "?")
+            (list 'FUNCTION "zend_ast_create_zval_from_str")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'PARAMETER "$2")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'COLON ":")
+            (list 'NULL "NULL")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";"))))
+
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "/* allow single trailing comma */ $$ = zend_ast_list_rtrim($1); ")
+           (list
+            (list 'DOC_COMMENT "allow single trailing comma")
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "zend_ast_list_rtrim")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'PARAMETER "$1")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";"))))
+
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
@@ -381,8 +421,6 @@
   ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
   ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
 
-  ;; TODO Doc comments like    /* allow single trailing comma */ (zend_ast_list_
-  ;; TODO Ternary operator    1 ? 2 : 0
   ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
   ;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR -> (CG extra_fn_flags (bitwise-or (CG extra_fn_lags)))
   ;; TODO Dereferenced pointers like    (zend_ast *decl ?

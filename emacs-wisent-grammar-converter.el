@@ -105,6 +105,14 @@
       (cond
        ((equal
          (string-match
+          "/\\* \\(.+\\) \\*/"
+          string
+          start)
+         start)
+         (push (list 'DOC_COMMENT (match-string 1 string)) tokens)
+         (setq start (match-end 0)))
+       ((equal
+         (string-match
           "\\([a-zA-Z0-9_]+\\)("
           string
           start)
@@ -138,19 +146,19 @@
         (setq start (match-end 2)))
        ((equal
          (string-match
-          "[a-zA-Z0-9_]+"
-          string
-          start)
-         start)
-        (push (list 'VARIABLE (match-string 0 string)) tokens)
-        (setq start (match-end 0)))
-       ((equal
-         (string-match
           "null"
           string
           start)
          start)
         (push (list 'NULL (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "[a-zA-Z0-9_]+"
+          string
+          start)
+         start)
+        (push (list 'VARIABLE (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
