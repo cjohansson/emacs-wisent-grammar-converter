@@ -439,6 +439,14 @@
        (format
         "(plist-put return-item 'value %s)"
         (emacs-wisent-grammar-converter--assignment namespace)))
+      ('BITWISE_OR_ASSIGNMENT
+       (format
+        "(plist-put return-item 'value (logior (plist-get return-item 'value) %s))"
+        (emacs-wisent-grammar-converter--assignment namespace)))
+      ('BITWISE_AND_ASSIGNMENT
+       (format
+        "(plist-put return-item 'value (logand (plist-get return-item 'value) %s))"
+        (emacs-wisent-grammar-converter--assignment namespace)))
       ('MEMBER_OPERATOR
        (format
         "(plist-put return-string %s)"
@@ -447,7 +455,6 @@
          namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
-;; TODO Add support to this function for assignments, bitwise-or-assignments and bitwise-and-assignments
 (defun emacs-wisent-grammar-converter--function (name namespace)
   "Parse function NAME and NAMESPACE."
   ;; Skip first OPENING_PARENTHESIS

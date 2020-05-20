@@ -406,7 +406,7 @@
              (list 'VARIABLE "ZEND_TYPE_NULLABLE")
              (list 'SEMICOLON ";")))
            "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) 'ZEND_TYPE_NULLABLE)) return-item)"))
-  (message "Passed test: set return-item to parameter and then change attribute with a bitwise or assignment of return-item")
+  (message "Passed test: set return-item to parameter and then change attribute with a bitwise-or assignment of return-item")
 
   ;; CG(extra_fn_flags) = $9;
   (should (equal
@@ -450,19 +450,34 @@
            "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logand (CG 'extra_fn_flags) 'ZEND_ACC_GENERATOR)) return-item)"))
   (message "Passed test: set function-value via bitwise-and-assignment")
 
-  ;; TODO $$ |= ZEND_ACC_PUBLIC;
+  ;; $$ |= ZEND_ACC_PUBLIC;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'BITWISE_OR_ASSIGNMENT "|=")
+             (list 'VARIABLE "ZEND_ACC_PUBLIC")
+             (list 'SEMICOLON ";")))
+           "(let ((return-item '(value $$)))(plist-put return-item 'value (logior (plist-get return-item 'value) 'ZEND_ACC_PUBLIC)) return-item)"))
+  (message "Passed test: assign return-item bitwise-or of variable")
 
-  ;; TODO stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
+  ;; $$ &= ZEND_ACC_PUBLIC;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'BITWISE_AND_ASSIGNMENT "|=")
+             (list 'VARIABLE "ZEND_ACC_PUBLIC")
+             (list 'SEMICOLON ";")))
+           "(let ((return-item '(value $$)))(plist-put return-item 'value (logand (plist-get return-item 'value) 'ZEND_ACC_PUBLIC)) return-item)"))
+  (message "Passed test: assign return-item bitwise-and of variable")
+
+  ;; TODO ternary stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
   ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
   ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
 
   ;; TODO Dereferenced pointers like    (zend_ast *decl ?
 
-  ;; TODO stuff like:
-;; $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
-;; 				  zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
-;; 				  $5, $7, $11, $8); CG(extra_fn_flags) = $9;
-  
   )
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
