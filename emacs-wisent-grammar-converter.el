@@ -352,38 +352,40 @@
       return-string
       ")"))
 
-    (while emacs-wisent-grammar-converter--lexer-tokens-stack
-      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-             (token-id (car token))
-             (token-value (car (cdr token))))
-        ;; (message "token %s, id: %s, value: %s" token token-id token-value)
-        (pcase token-id
-          ('FUNCTION
-           (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--function token-value namespace))))
-          ('VARIABLE
-           (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--variable token-value namespace))))
-          ('PARAMETER
-           (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--parameter token-value namespace))))
-          ('RETURN
-           (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--return namespace))))
-          ('SEMICOLON)
-          (_ (signal 'error (list (format "Unexpected root token %s" token)))))))
+    (let ((last-token nil))
+      (while emacs-wisent-grammar-converter--lexer-tokens-stack
+        (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+               (token-id (car token))
+               (token-value (car (cdr token))))
+          ;; (message "token %s, id: %s, value: %s" token token-id token-value)
+          (pcase token-id
+            ('FUNCTION
+             (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--function token-value namespace))))
+            ('VARIABLE
+             (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--variable token-value namespace))))
+            ('PARAMETER
+             (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--parameter token-value namespace))))
+            ('RETURN
+             (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--return namespace))))
+            ('SEMICOLON)
+            (_ (signal 'error (list (format "Unexpected root token %s" token)))))
+          (setq last-token token))))
 
     (format "%s return-item)" return-string)))
 
@@ -445,25 +447,122 @@
          namespace)))
       (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
 
+;; TODO Add support to this function for assignments, bitwise-or-assignments and bitwise-and-assignments
 (defun emacs-wisent-grammar-converter--function (name namespace)
   "Parse function NAME and NAMESPACE."
+  ;; Skip first OPENING_PARENTHESIS
   (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-         (token-id (car token))
-         (token-value (car (cdr token))))
-    (pcase token-id
-      ('CLOSE_PARENTHESIS
-       (format
-        "(%s%s)"
-        namespace
-        name))
-      (_
-       (push token emacs-wisent-grammar-converter--lexer-tokens-stack)
-       (format
-          "(%s%s %s)"
-          namespace
-          name
-          (emacs-wisent-grammar-converter--function-arguments token namespace))))))
+
+  (let ((argument-string nil)
+        (continue t)
+        (return-string nil)
+        (closed nil))
+    (while (and continue
+                emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('ASSIGNMENT
+           (unless closed
+             (signal 'err (list (format "Unexpected function assignment %s" token))))
+           (setq continue nil)
+           (if argument-string
+               (setq
+                return-string
+                (format
+                 "(%s%s '%s %s)"
+                 namespace
+                 name
+                 argument-string
+                 (emacs-wisent-grammar-converter--assignment namespace)))
+             (setq
+              return-string
+              (format
+               "(%s%s %s)"
+               namespace
+               name
+               (emacs-wisent-grammar-converter--assignment namespace)))))
+          ('BITWISE_OR_ASSIGNMENT
+           (unless closed
+             (signal 'err (list (format "Unexpected function assignment %s" token))))
+           (setq continue nil)
+           (if argument-string
+               (setq
+                return-string
+                (format
+                 "(%s%s '%s (logior (%s%s '%s) %s))"
+                 namespace
+                 name
+                 argument-string
+                 namespace
+                 name
+                 argument-string
+                 (emacs-wisent-grammar-converter--assignment namespace)))
+             (setq
+              return-string
+              (format
+               "(%s%s (logior (%s%s) %s))"
+               namespace
+               name
+               namespace
+               name
+               (emacs-wisent-grammar-converter--assignment namespace)))))
+          ('BITWISE_AND_ASSIGNMENT
+           (unless closed
+             (signal 'err (list (format "Unexpected function assignment %s" token))))
+           (setq continue nil)
+           (if argument-string
+               (setq
+                return-string
+                (format
+                 "(%s%s '%s (logand (%s%s '%s) %s))"
+                 namespace
+                 name
+                 argument-string
+                 namespace
+                 name
+                 argument-string
+                 (emacs-wisent-grammar-converter--assignment namespace)))
+             (setq
+              return-string
+              (format
+               "(%s%s (logand (%s%s) %s))"
+               namespace
+               name
+               namespace
+               name
+               (emacs-wisent-grammar-converter--assignment namespace)))))
+          ('CLOSE_PARENTHESIS
+           (setq closed t)
+           (if argument-string
+               (setq
+                return-string
+                (format
+                 "(%s%s %s)"
+                 namespace
+                 name
+                 argument-string))
+             (setq
+              return-string
+              (format
+               "(%s%s)"
+               namespace
+               name))))
+          (_
+           (if closed
+               (progn
+                 (setq continue nil)
+                 (push
+                  token
+                  emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (push
+              token
+              emacs-wisent-grammar-converter--lexer-tokens-stack)
+             (setq
+              argument-string
+              (emacs-wisent-grammar-converter--function-arguments token namespace)))))))
+    return-string))
 
 (defun emacs-wisent-grammar-converter--function-arguments (token namespace)
   "Parse function arguments starting at TOKEN with NAMESPACE."
@@ -508,6 +607,9 @@
              (emacs-wisent-grammar-converter--function token-value namespace)))
            (setq return-count (1+ return-count)))
           ('CLOSE_PARENTHESIS
+           (push
+            token
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
            (setq continue nil))
           (_ (signal 'error (list (format "Unexpected function arguments token: %s" token)))))))
     return-string))

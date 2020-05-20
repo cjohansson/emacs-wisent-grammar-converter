@@ -30,8 +30,7 @@
 (require 'emacs-wisent-grammar-converter)
 (require 'ert)
 
-(message " ")
-(message "Unit tests started")
+(message "\nUnit tests started\n")
 
 (defun emacs-wisent-grammar-converter-test--reformat-logic-block ()
   "Test `emacs-wisent-grammar-converter--reformat-logic-block'."
@@ -409,22 +408,60 @@
            "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) 'ZEND_TYPE_NULLABLE)) return-item)"))
   (message "Passed test: set return-item to parameter and then change attribute with a bitwise or assignment of return-item")
 
-  ;; TODO CG(extra_fn_flags) = $9;
+  ;; CG(extra_fn_flags) = $9;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'FUNCTION "CG")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "extra_fn_flags")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'ASSIGNMENT "=")
+             (list 'PARAMETER "$9")
+             (list 'SEMICOLON ";")))
+           "(let ((parameter-9 '(value $9))(return-item '(value $$)))(CG 'extra_fn_flags parameter-9) return-item)"))
+  (message "Passed test: set function-value via assignment")
 
-  ;; TODO CG(extra_fn_flags) |= ZEND_ACC_GENERATOR;
+  ;; CG(extra_fn_flags) |= ZEND_ACC_GENERATOR;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'FUNCTION "CG")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "extra_fn_flags")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'BITWISE_OR_ASSIGNMENT "|=")
+             (list 'VARIABLE "ZEND_ACC_GENERATOR")
+             (list 'SEMICOLON ";")))
+           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logior (CG 'extra_fn_flags) 'ZEND_ACC_GENERATOR)) return-item)"))
+  (message "Passed test: set function-value via bitwise-or-assignment")
+
+  ;; CG(extra_fn_flags) &= ZEND_ACC_GENERATOR;
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'FUNCTION "CG")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "extra_fn_flags")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'BITWISE_AND_ASSIGNMENT "|=")
+             (list 'VARIABLE "ZEND_ACC_GENERATOR")
+             (list 'SEMICOLON ";")))
+           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logand (CG 'extra_fn_flags) 'ZEND_ACC_GENERATOR)) return-item)"))
+  (message "Passed test: set function-value via bitwise-and-assignment")
 
   ;; TODO $$ |= ZEND_ACC_PUBLIC;
-
-  ;; TODO CG(extra_fn_flags) |= ZEND_ACC_GENERATOR;
 
   ;; TODO stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
   ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
   ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
 
-  ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
-  ;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR -> (CG extra_fn_flags (bitwise-or (CG extra_fn_lags)))
   ;; TODO Dereferenced pointers like    (zend_ast *decl ?
-  ;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
+
+  ;; TODO stuff like:
+;; $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
+;; 				  zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
+;; 				  $5, $7, $11, $8); CG(extra_fn_flags) = $9;
   
   )
 
@@ -432,7 +469,7 @@
 (emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp)
 ;; (emacs-wisent-grammar-converter-test--reformat-logic-block)
 
-(message "Unit tests completed")
+(message "\nUnit tests completed\n")
 
 (provide 'emacs-wisent-grammar-converter-test)
 ;;; emacs-wisent-grammar-converter-test.el ends here
