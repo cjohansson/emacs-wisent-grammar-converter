@@ -472,11 +472,56 @@
            "(let ((return-item '(value $$)))(plist-put return-item 'value (logand (plist-get return-item 'value) 'ZEND_ACC_PUBLIC)) return-item)"))
   (message "Passed test: assign return-item bitwise-and of variable")
 
-  ;; TODO ternary stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'FUNCTION "zend_ast_create_decl")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "ZEND_AST_CLOSURE")
+             (list 'COMMA ",")
+             (list 'PARAMETER "$2")
+             (list 'BITWISE_OR "|")
+             (list 'PARAMETER "$13")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'SEMI_COLON ";")))
+           ""))
+  (message "Passed test: bitwise-or on function arguments")
+
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'FUNCTION "zend_ast_create_decl")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "ZEND_AST_CLOSURE")
+             (list 'COMMA ",")
+             (list 'PARAMETER "$2")
+             (list 'BITWISE_OR "&")
+             (list 'PARAMETER "$13")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'SEMI_COLON ";")))
+           ""))
+  (message "Passed test: bitwise-and on function arguments")
+
+  ;; TODO ternary stuff like
+  ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
+
+  ;; TODO string stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
   ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
   ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
 
-  ;; TODO Dereferenced pointers like    (zend_ast *decl ?
+  ;; TODO Dereferenced pointers like    {
+  ;; 	zend_ast *decl = zend_ast_create_decl(
+  ;; 		ZEND_AST_CLASS, ZEND_ACC_ANON_CLASS, $<num>2, $6, NULL,
+  ;; 		$4, $5, $8, NULL);
+  ;; 	$$ = zend_ast_create(ZEND_AST_NEW, decl, $3);
+  ;; }
+
+  ;; TODO Dereference stuff like
+  ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
 
   )
 
