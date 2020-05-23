@@ -575,7 +575,8 @@
   "Parse function arguments starting at TOKEN with NAMESPACE."
   (let ((return-string "")
         (return-count 0)
-        (continue t))
+        (continue t)
+        (bracket-level 1))
     (while (and continue
                 emacs-wisent-grammar-converter--lexer-tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
@@ -583,7 +584,9 @@
              (token-value (car (cdr token))))
         (pcase token-id
           ('COMMA)
-          ((or 'VARIABLE 'FUNCTION 'PARAMETER)
+          ('OPEN_PARENTHESIS
+           (setq bracket-level (1+ bracket-level)))
+          ((or 'VARIABLE 'FUNCTION 'PARAMETER 'NULL)
            (let ((next-is-bitwise-or
                   (and
                    emacs-wisent-grammar-converter--lexer-tokens-stack
@@ -619,10 +622,12 @@
                  (emacs-wisent-grammar-converter--token-value namespace token)))))
              (setq return-count (1+ return-count))))
           ('CLOSE_PARENTHESIS
-           (push
-            token
-            emacs-wisent-grammar-converter--lexer-tokens-stack)
-           (setq continue nil))
+           (setq bracket-level (1- bracket-level))
+           (when (= bracket-level 0)
+             (push
+              token
+              emacs-wisent-grammar-converter--lexer-tokens-stack)
+             (setq continue nil)))
           (_ (signal 'error (list (format "Unexpected function arguments token: %s" token)))))))
     return-string))
 
@@ -638,6 +643,8 @@
         token-value))
       ('PARAMETER
        (emacs-wisent-grammar-converter--parameter-to-plist token-value))
+      ('NULL
+       "nil")
       ('FUNCTION
        (emacs-wisent-grammar-converter--function token-value namespace))
       (_ (signal 'error (list (format "Unexpected token value token: %s" token)))))))

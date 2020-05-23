@@ -506,7 +506,34 @@
            "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl ZEND_AST_CLOSURE (logand parameter-2 parameter-13))) return-item)"))
   (message "Passed test: bitwise-and on function arguments")
 
-  ;; TODO ternary stuff like
+  ;; TODO
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'FUNCTION "zend_ast_create")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'VARIABLE "ZEND_AST_PROP_ELEM")
+             (list 'COMMA ",")
+             (list 'PARAMETER "$1")
+             (list 'COMMA ",")
+             (list 'NULL "NULL")
+             (list 'COMMA ",")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'PARAMETER "$2")
+             (list 'QUESTION_MARK "?")
+             (list 'FUNCTION "zend_ast_create_zval_from_str")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'PARAMETER "$2")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'COLON ":")
+             (list 'NULL "NULL")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'CLOSE_PARENTHESIS)
+             (list 'SEMICOLON ";")))
+           ""))
+  (message "Passed test: ternary expression in function arguments")
   ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
 
   ;; TODO string stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
