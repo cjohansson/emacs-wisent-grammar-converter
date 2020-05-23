@@ -485,8 +485,8 @@
              (list 'BITWISE_OR "|")
              (list 'PARAMETER "$13")
              (list 'CLOSE_PARENTHESIS)
-             (list 'SEMI_COLON ";")))
-           ""))
+             (list 'SEMICOLON ";")))
+           "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl ZEND_AST_CLOSURE (logior parameter-2 parameter-13))) return-item)"))
   (message "Passed test: bitwise-or on function arguments")
 
   (should (equal
@@ -499,11 +499,11 @@
              (list 'VARIABLE "ZEND_AST_CLOSURE")
              (list 'COMMA ",")
              (list 'PARAMETER "$2")
-             (list 'BITWISE_OR "&")
+             (list 'BITWISE_AND "&")
              (list 'PARAMETER "$13")
              (list 'CLOSE_PARENTHESIS)
-             (list 'SEMI_COLON ";")))
-           ""))
+             (list 'SEMICOLON ";")))
+           "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl ZEND_AST_CLOSURE (logand parameter-2 parameter-13))) return-item)"))
   (message "Passed test: bitwise-and on function arguments")
 
   ;; TODO ternary stuff like

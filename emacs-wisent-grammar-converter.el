@@ -583,36 +583,41 @@
              (token-value (car (cdr token))))
         (pcase token-id
           ('COMMA)
-          ('VARIABLE
-           (when (> return-count 0)
-             (setq return-string (concat return-string " ")))
-           (setq
-            return-string
-            (concat
-             return-string
-             (format
-              "%s%s"
-              namespace
-              token-value)))
-           (setq return-count (1+ return-count)))
-          ('PARAMETER
-           (when (> return-count 0)
-             (setq return-string (concat return-string " ")))
-           (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
-           (setq return-count (1+ return-count)))
-          ('FUNCTION
-           (when (> return-count 0)
-             (setq return-string (concat return-string " ")))
-           (setq
-            return-string
-            (concat
-             return-string
-             (emacs-wisent-grammar-converter--function token-value namespace)))
-           (setq return-count (1+ return-count)))
+          ((or 'VARIABLE 'FUNCTION 'PARAMETER)
+           (let ((next-is-bitwise-or
+                  (and
+                   emacs-wisent-grammar-converter--lexer-tokens-stack
+                   (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_OR)))
+                 (next-is-bitwise-and
+                  (and
+                   emacs-wisent-grammar-converter--lexer-tokens-stack
+                   (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_AND))))
+             (when (> return-count 0)
+               (setq return-string (concat return-string " ")))
+             (cond
+              ((or next-is-bitwise-or
+                   next-is-bitwise-and)
+               (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+               (let ((next-token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+                     (operator "logior"))
+                 (when next-is-bitwise-and
+                   (setq operator "logand"))
+                 (setq
+                  return-string
+                  (concat
+                   return-string
+                   (format
+                    "(%s %s %s)"
+                    operator
+                    (emacs-wisent-grammar-converter--token-value namespace token)
+                    (emacs-wisent-grammar-converter--token-value namespace next-token))))))
+              (t
+               (setq
+                return-string
+                (concat
+                 return-string
+                 (emacs-wisent-grammar-converter--token-value namespace token)))))
+             (setq return-count (1+ return-count))))
           ('CLOSE_PARENTHESIS
            (push
             token
@@ -620,6 +625,22 @@
            (setq continue nil))
           (_ (signal 'error (list (format "Unexpected function arguments token: %s" token)))))))
     return-string))
+
+(defun emacs-wisent-grammar-converter--token-value (namespace token)
+  "Return TOKEN value."
+  (let* ((token-id (car token))
+         (token-value (car (cdr token))))
+    (pcase token-id
+      ('VARIABLE
+       (format
+        "%s%s"
+        namespace
+        token-value))
+      ('PARAMETER
+       (emacs-wisent-grammar-converter--parameter-to-plist token-value))
+      ('FUNCTION
+       (emacs-wisent-grammar-converter--function token-value namespace))
+      (_ (signal 'error (list (format "Unexpected token value token: %s" token)))))))
 
 (defun emacs-wisent-grammar-converter--assignment (namespace)
   "Parse assignment using NAMESPACE."
