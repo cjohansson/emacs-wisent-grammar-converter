@@ -36,53 +36,6 @@
 
 ;;; Code:
 
-(defun emacs-wisent-grammar-converter--reformat-logic-block (logic &optional prefix)
-  "Reformat LOGIC from C to elisp, use PREFIX if specified."
-  (unless prefix
-    (setq prefix ""))
-
-  ;; Replace line-feeds and carriage returns with space
-  (setq logic (replace-regexp-in-string "\\(\n\\|\r\\)+" " " logic))
-
-  ;; Replace comma with space
-  (setq logic (replace-regexp-in-string ",\\ +" " " logic))
-
-  ;; Replace more than one space with a single space
-  (setq logic (replace-regexp-in-string "\\(\\ \\|\t\\)\\(\\ \\|\t\\)+" " " logic))
-
-  ;; Transform statements like    zend(a, b, c)    into    ($PREFIXzend a b c)
-  (while (string-match "\\([a-zA-Z_-]+\\)(\\([^)]*\\))" logic)
-    (if (string= (match-string 2 logic) "")
-        (setq logic (replace-match (format "(%s%s)" prefix (match-string 1 logic)) t t logic))
-      (setq logic (replace-match (format "(%s%s %s)" prefix (match-string 1 logic) (match-string 2 logic)) t t logic))))
-
-  ;; Transform statements like    $$ = $1;    into    $1
-  (while (string-match "$$ = $\\([0-9]+\\);" logic)
-    (setq logic (replace-match (format "$%s" (match-string 1 logic)) t t logic)))
-
-  ;; Transform statements like    $$ = (zend    into    ($PREFIXzend
-  (while (string-match "$$ = \\(([a-zA-Z_]\\)" logic)
-    (setq logic (replace-match (format "%s%s" prefix (match-string 1 logic)) t t logic)))
-
-  ;; Transform statements like    $$->attr = ZEND_NAME_NOT_FQ;    into    (put $$ 'attr 'ZEND_NAME_NOT_FQ)
-  (while (string-match "\\([\$a-zA-Z0-9]+\\)->\\([a-zA-Z0-9]+\\)[\\ ]*=[\\ ]*\\([^;]+\\);" logic)
-    (setq logic (replace-match (format "(put %s '%s '%s)" (match-string 1 logic) (match-string 2 logic) (match-string 3 logic)) t t logic)))
-
-  ;; Replace semi-colon with nothing
-  (setq logic (replace-regexp-in-string ";" "" logic))
-
-  ;; Transform doc block comments    /* blaha */ to \n;; blaha\n
-  (while (string-match "/\\*\\(.+\\)\\*/" logic)
-    (setq logic (replace-match (format "\n;;%s\n" (match-string 1 logic)) t t logic)))
-
-  ;; Transform logical or operators    $1|$2    to    (logior $1 $2))
-  (while (string-match "\\(\\$[0-9]+\\)[\\ ]*|[\\ ]*\\(\\$[0-9]+\\)" logic)
-    (setq logic (replace-match (format "(logior %s %s)" (match-string 1 logic) (match-string 2 logic)) t t logic)))
-
-  ;; Replace NULL with nil
-  (setq logic (replace-regexp-in-string "NULL\\(?:[^A-Z]\\)" "nil" logic t t))
-
-  (emacs-wisent-grammar-converter--string-trim logic))
 
 (defun emacs-wisent-grammar-converter--string-trim (string)
   "Trim STRING from white-space."

@@ -32,102 +32,6 @@
 
 (message "\nUnit tests started\n")
 
-(defun emacs-wisent-grammar-converter-test--reformat-logic-block ()
-  "Test `emacs-wisent-grammar-converter--reformat-logic-block'."
-
-  ;; Test function and variable prefix
-  (should (equal
-           "(random-random-statement)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "	random-statement();  	\n\n" "random-")))
-
-  ;; White-space
-  (should (equal
-           "random-statement"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "	random-statement;  	\n\n")))
-
-  ;; Return a argument
-  (should (equal
-           "$3"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  $$ = $3;  	\n\n")))
-
-  ;; Function calls with arguments
-  (should (equal
-           "(zend_ast_create ZEND_AST_EMPTY $3)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
-
-  ;; Function calls without arguments
-  (should (equal
-           "(zend_ast_create)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  zend_ast_create();  	\n\n")))
-
-  ;; NULL values like    ($$ = NULLABLE)
-  (should (equal
-           "$$ = nil"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  $$ = NULL;  	\n\n")))
-
-  ;; Attribute assignments like    $$->attr = ZEND_NAME_NOT_FQ;
-  (should (equal
-           "(put $$ 'attr 'ZEND_NAME_NOT_FQ)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  $$->attr = ZEND_NAME_NOT_FQ;  	\n\n")))
-
-  ;; Logical or like    $1 | $2
-  (should (equal
-           "(logior $1 $2)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  $1 | $2  	\n\n")))
-
-  ;; Doc comments like    /* allow single trailing comma */ (zend_ast_list_rtrim $1)
-  (should (equal
-           ";; allow single trailing comma\n(zend_ast_list_rtrim $1)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "/* allow single trailing comma */ (zend_ast_list_rtrim $1)")))
-
-  ;; Return function call
-  (should (equal
-           "(zend_ast_create ZEND_AST_EMPTY $3)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  $$ = zend_ast_create(ZEND_AST_EMPTY, $3);  	\n\n")))
-
-  ;; TODO Syntactic sugar like    1 ? 2 : 0
-  (should (equal
-           "(if 1 2 0)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  1 ? 2 : 0  	\n\n")))
-
-  ;; TODO Place return statements last in block    $$ = ...
-  (should (equal
-           "(a)(b)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "  $$ = b(); a();")))
-
-  ;; TODO Function assignments like     (CG extra_fn_flags) = 0 -> (CG extra_fn_lags 0)
-  (should (equal
-           "(CG exra_fn_lags 0)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "CG(extra_fn_lags) = 0;")))
-
-  ;; TODO Logical or assignment like    (CG extra_fn_flags) |= ZEND_ACC_GENERATOR -> (CG extra_fn_flags (bitwise-or (CG extra_fn_lags)))
-  (should (equal
-           "(CG exra_fn_lags (bitwise-or (CG extra_fn_lags) ZEND_ACC_GENERATOR))"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "	(CG extra_fn_lags) |= ZEND_ACC_GENERATOR")))
-
-  ;; TODO Dereferenced pointers like    (zend_ast *decl ?
-  (should (equal
-           "(symbol-value SYMBOL)"
-           (emacs-wisent-grammar-converter--reformat-logic-block
-            "	*SYMBOL")))
-
-  ;; TODO zend_string_init("closure) (", sizeof("closure)") - 1 0) $5 $7 $11 $8) (CG extra_fn_flags) = $9)
-  )
-
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()
   "Test `emacs-wisent-grammar-converter-test--lex-c-string'"
   (should (equal
@@ -535,6 +439,30 @@
   (message "Passed test: ternary expression in function arguments")
   ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
 
+  ;; TODO
+  (should (equal
+           (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+            (list
+             (list 'RETURN "$$")
+             (list 'ASSIGNMENT "=")
+             (list 'PARAMETER "$2")
+             (list 'SEMICOLON ";")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'OPEN_PARENTHESIS "(")
+             (list 'DECLARATION "zend_ast_decl")
+             (list 'ASTERIX "*")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'RETURN "$$")
+             (list 'CLOSE_PARENTHESIS)
+             (list 'MEMBER_OPERATOR "->")
+             (list 'VARIABLE "flags")
+             (list 'BITWISE_OR_ASSIGNMENT)
+             (list 'VARIABLE "ZEND_ACC_STATIC")
+             (list 'SEMICOLON)))
+           ""))
+  (message "Passed test: De-referenced variable first test")
+  ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
+
   ;; TODO string stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
   ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
   ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
@@ -546,14 +474,10 @@
   ;; 	$$ = zend_ast_create(ZEND_AST_NEW, decl, $3);
   ;; }
 
-  ;; TODO Dereference stuff like
-  ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
-
   )
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
 (emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp)
-;; (emacs-wisent-grammar-converter-test--reformat-logic-block)
 
 (message "\nUnit tests completed\n")
 
