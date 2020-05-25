@@ -372,7 +372,7 @@
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "ZEND_NAME_NOT_FQ")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(plist-put return-string 'attr 'ZEND_NAME_NOT_FQ) return-item)"))
+           "(let ((return-item '(value $$)))(plist-put return-string 'attr ZEND_NAME_NOT_FQ) return-item)"))
   (message "Passed test: set attribute of return-item")
 
   (should (equal
@@ -388,7 +388,7 @@
              (list 'ASSIGNMENT "=")
              (list 'VARIABLE "ZEND_NAME_NOT_FQ")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value parameter-1)(plist-put return-string 'attr 'ZEND_NAME_NOT_FQ) return-item)"))
+           "(let ((parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value parameter-1)(plist-put return-string 'attr ZEND_NAME_NOT_FQ) return-item)"))
   (message "Passed test: set return-item to parameter and then change attribute of return-item")
 
   ;; Support things like    $$ = $2; $$->attr |= ZEND_TYPE_NULLABLE;
@@ -405,7 +405,7 @@
              (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_TYPE_NULLABLE")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) 'ZEND_TYPE_NULLABLE)) return-item)"))
+           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) ZEND_TYPE_NULLABLE)) return-item)"))
   (message "Passed test: set return-item to parameter and then change attribute with a bitwise-or assignment of return-item")
 
   ;; CG(extra_fn_flags) = $9;
@@ -433,7 +433,7 @@
              (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_ACC_GENERATOR")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logior (CG 'extra_fn_flags) 'ZEND_ACC_GENERATOR)) return-item)"))
+           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logior (CG 'extra_fn_flags) ZEND_ACC_GENERATOR)) return-item)"))
   (message "Passed test: set function-value via bitwise-or-assignment")
 
   ;; CG(extra_fn_flags) &= ZEND_ACC_GENERATOR;
@@ -447,7 +447,7 @@
              (list 'BITWISE_AND_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_ACC_GENERATOR")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logand (CG 'extra_fn_flags) 'ZEND_ACC_GENERATOR)) return-item)"))
+           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logand (CG 'extra_fn_flags) ZEND_ACC_GENERATOR)) return-item)"))
   (message "Passed test: set function-value via bitwise-and-assignment")
 
   ;; $$ |= ZEND_ACC_PUBLIC;
@@ -458,7 +458,7 @@
              (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_ACC_PUBLIC")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(plist-put return-item 'value (logior (plist-get return-item 'value) 'ZEND_ACC_PUBLIC)) return-item)"))
+           "(let ((return-item '(value $$)))(plist-put return-item 'value (logior (plist-get return-item 'value) ZEND_ACC_PUBLIC)) return-item)"))
   (message "Passed test: assign return-item bitwise-or of variable")
 
   ;; $$ &= ZEND_ACC_PUBLIC;
@@ -469,7 +469,7 @@
              (list 'BITWISE_AND_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_ACC_PUBLIC")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(plist-put return-item 'value (logand (plist-get return-item 'value) 'ZEND_ACC_PUBLIC)) return-item)"))
+           "(let ((return-item '(value $$)))(plist-put return-item 'value (logand (plist-get return-item 'value) ZEND_ACC_PUBLIC)) return-item)"))
   (message "Passed test: assign return-item bitwise-and of variable")
 
   (should (equal

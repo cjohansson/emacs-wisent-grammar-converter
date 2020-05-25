@@ -400,7 +400,7 @@
         "(setq %s%s %s)"
         namespace
         name
-        (emacs-wisent-grammar-converter--assignment namespace)))
+        (emacs-wisent-grammar-converter--token-value namespace)))
       ('MEMBER_OPERATOR
        (format
         "(put %s%s '%s)"
@@ -419,7 +419,7 @@
        (format
         "(plist-put %s 'value %s)"
         (emacs-wisent-grammar-converter--parameter-to-plist name)
-        (emacs-wisent-grammar-converter--assignment namespace)))
+        (emacs-wisent-grammar-converter--token-value namespace)))
       ('MEMBER_OPERATOR
        (format
         "(plist-put %s %s)"
@@ -438,15 +438,15 @@
       ('ASSIGNMENT
        (format
         "(plist-put return-item 'value %s)"
-        (emacs-wisent-grammar-converter--assignment namespace)))
+        (emacs-wisent-grammar-converter--token-value namespace)))
       ('BITWISE_OR_ASSIGNMENT
        (format
         "(plist-put return-item 'value (logior (plist-get return-item 'value) %s))"
-        (emacs-wisent-grammar-converter--assignment namespace)))
+        (emacs-wisent-grammar-converter--token-value namespace)))
       ('BITWISE_AND_ASSIGNMENT
        (format
         "(plist-put return-item 'value (logand (plist-get return-item 'value) %s))"
-        (emacs-wisent-grammar-converter--assignment namespace)))
+        (emacs-wisent-grammar-converter--token-value namespace)))
       ('MEMBER_OPERATOR
        (format
         "(plist-put return-string %s)"
@@ -482,14 +482,14 @@
                  namespace
                  name
                  argument-string
-                 (emacs-wisent-grammar-converter--assignment namespace)))
+                 (emacs-wisent-grammar-converter--token-value namespace)))
              (setq
               return-string
               (format
                "(%s%s %s)"
                namespace
                name
-               (emacs-wisent-grammar-converter--assignment namespace)))))
+               (emacs-wisent-grammar-converter--token-value namespace)))))
           ('BITWISE_OR_ASSIGNMENT
            (unless closed
              (signal 'err (list (format "Unexpected function assignment %s" token))))
@@ -505,7 +505,7 @@
                  namespace
                  name
                  argument-string
-                 (emacs-wisent-grammar-converter--assignment namespace)))
+                 (emacs-wisent-grammar-converter--token-value namespace)))
              (setq
               return-string
               (format
@@ -514,7 +514,7 @@
                name
                namespace
                name
-               (emacs-wisent-grammar-converter--assignment namespace)))))
+               (emacs-wisent-grammar-converter--token-value namespace)))))
           ('BITWISE_AND_ASSIGNMENT
            (unless closed
              (signal 'err (list (format "Unexpected function assignment %s" token))))
@@ -530,7 +530,7 @@
                  namespace
                  name
                  argument-string
-                 (emacs-wisent-grammar-converter--assignment namespace)))
+                 (emacs-wisent-grammar-converter--token-value namespace)))
              (setq
               return-string
               (format
@@ -539,7 +539,7 @@
                name
                namespace
                name
-               (emacs-wisent-grammar-converter--assignment namespace)))))
+               (emacs-wisent-grammar-converter--token-value namespace)))))
           ('CLOSE_PARENTHESIS
            (setq closed t)
            (if argument-string
@@ -576,7 +576,8 @@
   (let ((return-string "")
         (return-count 0)
         (continue t)
-        (bracket-level 1))
+        (bracket-level 1)
+        (in-ternary nil))
     (while (and continue
                 emacs-wisent-grammar-converter--lexer-tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
@@ -587,10 +588,15 @@
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level)))
           ((or 'VARIABLE 'FUNCTION 'PARAMETER 'NULL)
+           ;; TODO If current token is a function next token is not what we are looking for
            (let ((next-is-bitwise-or
                   (and
                    emacs-wisent-grammar-converter--lexer-tokens-stack
                    (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_OR)))
+                 (next-is-ternary
+                  (and
+                   emacs-wisent-grammar-converter--lexer-tokens-stack
+                   (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'QUESTION_MARK)))
                  (next-is-bitwise-and
                   (and
                    emacs-wisent-grammar-converter--lexer-tokens-stack
@@ -598,6 +604,26 @@
              (when (> return-count 0)
                (setq return-string (concat return-string " ")))
              (cond
+              (next-is-ternary
+               ;; TODO If ternary-true is a function next token is not what we are looking for
+               (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+               (let ((ternary-true (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+                     (ternary-false ""))
+                 (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+                 (setq ternary-false (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+
+                 (message "Was here")
+                 (message "return-string: '%s' '%s'" ternary-true ternary-false)
+
+                 (setq
+                  return-string
+                  (concat
+                   return-string
+                   (format
+                    "(if %s %s %s)"
+                    (emacs-wisent-grammar-converter--token-value namespace token)
+                    (emacs-wisent-grammar-converter--token-value namespace ternary-true)
+                    (emacs-wisent-grammar-converter--token-value namespace ternary-false))))))
               ((or next-is-bitwise-or
                    next-is-bitwise-and)
                (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
@@ -631,8 +657,12 @@
           (_ (signal 'error (list (format "Unexpected function arguments token: %s" token)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter--token-value (namespace token)
+(defun emacs-wisent-grammar-converter--token-value (namespace &optional token)
   "Return TOKEN value."
+  (unless token
+    (setq
+     token
+     (pop emacs-wisent-grammar-converter--lexer-tokens-stack)))
   (let* ((token-id (car token))
          (token-value (car (cdr token))))
     (pcase token-id
@@ -648,25 +678,6 @@
       ('FUNCTION
        (emacs-wisent-grammar-converter--function token-value namespace))
       (_ (signal 'error (list (format "Unexpected token value token: %s" token)))))))
-
-(defun emacs-wisent-grammar-converter--assignment (namespace)
-  "Parse assignment using NAMESPACE."
-  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-         (token-id (car token))
-         (token-value (car (cdr token))))
-    (pcase token-id
-      ('PARAMETER
-        (emacs-wisent-grammar-converter--parameter-to-plist token-value))
-      ('VARIABLE
-       (format
-        "'%s%s"
-        namespace
-        token-value))
-      ('FUNCTION
-       (emacs-wisent-grammar-converter--function token-value namespace))
-      ('NULL
-       "nil")
-      (_ (signal 'error (list (format "Unexpected assignment token: %s" token)))))))
 
 ;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
 (defun emacs-wisent-grammar-converter--member-operator (parent namespace)
@@ -698,7 +709,7 @@
               " (logior (plist-get %s '%s) "
               parent
               variable)
-             (emacs-wisent-grammar-converter--assignment namespace)
+             (emacs-wisent-grammar-converter--token-value namespace)
              ")"))
            (setq continue nil))
           ('BITWISE_AND_ASSIGNMENT
@@ -710,7 +721,7 @@
               " (logand (plist-get %s '%s) "
               parent
               variable)
-             (emacs-wisent-grammar-converter--assignment namespace)
+             (emacs-wisent-grammar-converter--token-value namespace)
              ")"))
            (setq continue nil))
           ('ASSIGNMENT
@@ -719,7 +730,7 @@
             (concat
              return-string
              " "
-             (emacs-wisent-grammar-converter--assignment namespace)))
+             (emacs-wisent-grammar-converter--token-value namespace)))
             (setq continue nil))
           ('SEMICOLON
            (setq continue nil)
