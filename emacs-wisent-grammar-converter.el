@@ -109,8 +109,8 @@
           string
           start)
          start)
-         (push (list 'DOC_COMMENT (match-string 1 string)) tokens)
-         (setq start (match-end 0)))
+        (push (list 'DOC_COMMENT (match-string 1 string)) tokens)
+        (setq start (match-end 0)))
        ((equal
          (string-match
           "\\([a-zA-Z0-9_]+\\)("
@@ -588,65 +588,62 @@
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level)))
           ((or 'VARIABLE 'FUNCTION 'PARAMETER 'NULL)
-           ;; TODO If current token is a function next token is not what we are looking for
-           (let ((next-is-bitwise-or
-                  (and
-                   emacs-wisent-grammar-converter--lexer-tokens-stack
-                   (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_OR)))
-                 (next-is-ternary
-                  (and
-                   emacs-wisent-grammar-converter--lexer-tokens-stack
-                   (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'QUESTION_MARK)))
-                 (next-is-bitwise-and
-                  (and
-                   emacs-wisent-grammar-converter--lexer-tokens-stack
-                   (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_AND))))
-             (when (> return-count 0)
-               (setq return-string (concat return-string " ")))
-             (cond
-              (next-is-ternary
-               ;; TODO If ternary-true is a function next token is not what we are looking for
-               (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-               (let ((ternary-true (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-                     (ternary-false ""))
+           (let ((parsed-token-value (emacs-wisent-grammar-converter--token-value namespace token)))
+             (let ((next-is-bitwise-or
+                    (and
+                     emacs-wisent-grammar-converter--lexer-tokens-stack
+                     (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_OR)))
+                   (next-is-ternary
+                    (and
+                     emacs-wisent-grammar-converter--lexer-tokens-stack
+                     (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'QUESTION_MARK)))
+                   (next-is-bitwise-and
+                    (and
+                     emacs-wisent-grammar-converter--lexer-tokens-stack
+                     (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_AND))))
+               (when (> return-count 0)
+                 (setq return-string (concat return-string " ")))
+               (cond
+                (next-is-ternary
                  (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-                 (setq ternary-false (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+                 (let ((ternary-true (emacs-wisent-grammar-converter--token-value namespace))
+                       (ternary-false ""))
+                   ;; Pop the :
+                   (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+                   (setq ternary-false (emacs-wisent-grammar-converter--token-value namespace))
 
-                 (message "Was here")
-                 (message "return-string: '%s' '%s'" ternary-true ternary-false)
-
+                   (setq
+                    return-string
+                    (concat
+                     return-string
+                     (format
+                      "(if %s %s %s)"
+                      parsed-token-value
+                      ternary-true
+                      ternary-false)))))
+                ((or next-is-bitwise-or
+                     next-is-bitwise-and)
+                 (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+                 (let ((next-token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+                       (operator "logior"))
+                   (when next-is-bitwise-and
+                     (setq operator "logand"))
+                   (setq
+                    return-string
+                    (concat
+                     return-string
+                     (format
+                      "(%s %s %s)"
+                      operator
+                      parsed-token-value
+                      (emacs-wisent-grammar-converter--token-value namespace next-token))))))
+                (t
                  (setq
                   return-string
                   (concat
                    return-string
-                   (format
-                    "(if %s %s %s)"
-                    (emacs-wisent-grammar-converter--token-value namespace token)
-                    (emacs-wisent-grammar-converter--token-value namespace ternary-true)
-                    (emacs-wisent-grammar-converter--token-value namespace ternary-false))))))
-              ((or next-is-bitwise-or
-                   next-is-bitwise-and)
-               (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-               (let ((next-token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-                     (operator "logior"))
-                 (when next-is-bitwise-and
-                   (setq operator "logand"))
-                 (setq
-                  return-string
-                  (concat
-                   return-string
-                   (format
-                    "(%s %s %s)"
-                    operator
-                    (emacs-wisent-grammar-converter--token-value namespace token)
-                    (emacs-wisent-grammar-converter--token-value namespace next-token))))))
-              (t
-               (setq
-                return-string
-                (concat
-                 return-string
-                 (emacs-wisent-grammar-converter--token-value namespace token)))))
-             (setq return-count (1+ return-count))))
+                   parsed-token-value))))
+               (setq return-count (1+ return-count)))))
           ('CLOSE_PARENTHESIS
            (setq bracket-level (1- bracket-level))
            (when (= bracket-level 0)
@@ -731,7 +728,7 @@
              return-string
              " "
              (emacs-wisent-grammar-converter--token-value namespace)))
-            (setq continue nil))
+           (setq continue nil))
           ('SEMICOLON
            (setq continue nil)
            (push token emacs-wisent-grammar-converter--lexer-tokens-stack))

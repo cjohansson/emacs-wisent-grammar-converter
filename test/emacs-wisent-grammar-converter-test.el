@@ -506,7 +506,6 @@
            "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl ZEND_AST_CLOSURE (logand parameter-2 parameter-13))) return-item)"))
   (message "Passed test: bitwise-and on function arguments")
 
-  ;; TODO
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -532,7 +531,7 @@
              (list 'CLOSE_PARENTHESIS)
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           ""))
+           "(let ((parameter-2 '(value $2))(parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create ZEND_AST_PROP_ELEM parameter-1 nil (if parameter-2 (zend_ast_create_zval_from_str parameter-2) nil))) return-item)"))
   (message "Passed test: ternary expression in function arguments")
   ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
 
