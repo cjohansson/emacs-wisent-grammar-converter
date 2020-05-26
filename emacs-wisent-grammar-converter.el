@@ -90,13 +90,23 @@
         (setq start (match-end 1)))
        ((equal
          (string-match
-          "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z0-9_]+\\)"
+          "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z_][a-zA-Z0-9_]*\\|\*\\)"
           string
           start)
          start)
         (push (list 'DECLARATION (match-string 1 string)) tokens)
-        (push (list 'VARIABLE (match-string 2 string)) tokens)
+        (if (string= (match-string 2 string) "*")
+            (push (list 'POINTER (match-string 2 string)) tokens)
+          (push (list 'VARIABLE (match-string 2 string)) tokens))
         (setq start (match-end 2)))
+       ((equal
+         (string-match
+          "\"\\([^\"]*\\)\""
+          string
+          start)
+         start)
+        (push (list 'STRING (match-string 1 string)) tokens)
+        (setq start (match-end 0)))
        ((equal
          (string-match
           "null"
@@ -107,11 +117,19 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
-          "[a-zA-Z0-9_]+"
+          "[a-zA-Z_][a-zA-Z0-9_]*"
           string
           start)
          start)
         (push (list 'VARIABLE (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "[0-9_]+"
+          string
+          start)
+         start)
+        (push (list 'INTEGER (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -139,6 +157,38 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
+          "-"
+          string
+          start)
+         start)
+        (push (list 'SUBTRACTION (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\+"
+          string
+          start)
+         start)
+        (push (list 'ADDITION (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\*"
+          string
+          start)
+         start)
+        (push (list 'ASTERIX (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "/"
+          string
+          start)
+         start)
+        (push (list 'DIVISION (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
           "\\$\\$"
           string
           start)
@@ -147,7 +197,7 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
-          "\\$[0-9]"
+          "\\$[0-9]*"
           string
           start)
          start)

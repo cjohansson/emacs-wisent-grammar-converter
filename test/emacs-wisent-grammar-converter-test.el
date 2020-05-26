@@ -165,9 +165,6 @@
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
 
-  ;; TODO
-  (message "Tokens: %s" (emacs-wisent-grammar-converter--lex-c-string
-            "$$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3, zend_string_init(\"{closure}\", sizeof(\"{closure}\") - 1, 0), $5, $7, $11, $8); CG(extra_fn_flags) = $9;"))
   (should (equal
            (emacs-wisent-grammar-converter--lex-c-string
             "$$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3, zend_string_init(\"{closure}\", sizeof(\"{closure}\") - 1, 0), $5, $7, $11, $8); CG(extra_fn_flags) = $9;")
@@ -190,15 +187,16 @@
             (list 'OPEN_PARENTHESIS "(")
             (list 'STRING "{closure}")
             (list 'COMMA ",")
-            (list 'FUNCTON "sizeof")
+            (list 'FUNCTION "sizeof")
             (list 'OPEN_PARENTHESIS "(")
             (list 'STRING "{closure}")
             (list 'CLOSE_PARENTHESIS ")")
-            (list 'MINUS "-")
+            (list 'SUBTRACTION "-")
             (list 'INTEGER "1")
             (list 'COMMA ",")
             (list 'INTEGER "0")
             (list 'CLOSE_PARENTHESIS ")")
+            (list 'COMMA ",")
             (list 'PARAMETER "$5")
             (list 'COMMA ",")
             (list 'PARAMETER "$7")
@@ -215,8 +213,8 @@
             (list 'ASSIGNMENT "=")
             (list 'PARAMETER "$9")
             (list 'SEMICOLON ";"))))
+  (message "Passed lexer test with strings and integers")
 
-  ;; TODO
   (should (equal
            (emacs-wisent-grammar-converter--lex-c-string
             "$$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC;")
@@ -228,15 +226,15 @@
             (list 'OPEN_PARENTHESIS "(")
             (list 'OPEN_PARENTHESIS "(")
             (list 'DECLARATION "zend_ast_decl")
-            (list 'ASTERIX "*")
-            (list 'CLOSE_PARENTHESIS)
+            (list 'POINTER "*")
+            (list 'CLOSE_PARENTHESIS ")")
             (list 'RETURN "$$")
-            (list 'CLOSE_PARENTHESIS)
+            (list 'CLOSE_PARENTHESIS ")")
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "flags")
-            (list 'BITWISE_OR_ASSIGNMENT)
+            (list 'BITWISE_OR_ASSIGNMENT "|=")
             (list 'VARIABLE "ZEND_ACC_STATIC")
-            (list 'SEMICOLON))))
+            (list 'SEMICOLON ";"))))
 
   )
 
@@ -505,8 +503,8 @@
              (list 'CLOSE_PARENTHESIS)
              (list 'COLON ":")
              (list 'NULL "NULL")
-             (list 'CLOSE_PARENTHESIS)
-             (list 'CLOSE_PARENTHESIS)
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(let ((parameter-2 '(value $2))(parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create ZEND_AST_PROP_ELEM parameter-1 nil (if parameter-2 (zend_ast_create_zval_from_str parameter-2) nil))) return-item)"))
   (message "Passed test: ternary expression in function arguments")
@@ -523,22 +521,18 @@
              (list 'OPEN_PARENTHESIS "(")
              (list 'OPEN_PARENTHESIS "(")
              (list 'DECLARATION "zend_ast_decl")
-             (list 'ASTERIX "*")
-             (list 'CLOSE_PARENTHESIS)
+             (list 'POINTER "*")
+             (list 'CLOSE_PARENTHESIS ")")
              (list 'RETURN "$$")
-             (list 'CLOSE_PARENTHESIS)
+             (list 'CLOSE_PARENTHESIS ")")
              (list 'MEMBER_OPERATOR "->")
              (list 'VARIABLE "flags")
-             (list 'BITWISE_OR_ASSIGNMENT)
+             (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_ACC_STATIC")
-             (list 'SEMICOLON)))
+             (list 'SEMICOLON ";")))
            ""))
   (message "Passed test: De-referenced variable first test")
   ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
-
-  ;; TODO string stuff like { $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
-  ;; zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
-  ;; $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
 
   ;; TODO Dereferenced pointers like    {
   ;; 	zend_ast *decl = zend_ast_create_decl(
