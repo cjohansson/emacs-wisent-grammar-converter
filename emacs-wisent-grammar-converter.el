@@ -362,6 +362,7 @@
                (token-value (car (cdr token))))
           ;; (message "token %s, id: %s, value: %s" token token-id token-value)
           (pcase token-id
+            ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION 'POINTER))
             ('FUNCTION
              (setq
               return-string
@@ -434,29 +435,48 @@
 
 (defun emacs-wisent-grammar-converter--return (namespace)
   "Parse return in NAMESPACE."
-  (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-         (token-id (car token))
-         (token-value (car (cdr token))))
-    (pcase token-id
-      ('ASSIGNMENT
-       (format
-        "(plist-put return-item 'value %s)"
-        (emacs-wisent-grammar-converter--token-value namespace)))
-      ('BITWISE_OR_ASSIGNMENT
-       (format
-        "(plist-put return-item 'value (logior (plist-get return-item 'value) %s))"
-        (emacs-wisent-grammar-converter--token-value namespace)))
-      ('BITWISE_AND_ASSIGNMENT
-       (format
-        "(plist-put return-item 'value (logand (plist-get return-item 'value) %s))"
-        (emacs-wisent-grammar-converter--token-value namespace)))
-      ('MEMBER_OPERATOR
-       (format
-        "(plist-put return-string %s)"
-        (emacs-wisent-grammar-converter--member-operator
-         "return-item"
-         namespace)))
-      (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
+  (let ((return-string "")
+        (continue t))
+    (while (and
+            continue
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('ASSIGNMENT
+           (setq
+            return-string
+            (format
+             "(plist-put return-item 'value %s)"
+             (emacs-wisent-grammar-converter--token-value namespace)))
+           (setq continue nil))
+          ('BITWISE_OR_ASSIGNMENT
+           (setq
+            return-string
+            (format
+             "(plist-put return-item 'value (logior (plist-get return-item 'value) %s))"
+             (emacs-wisent-grammar-converter--token-value namespace)))
+           (setq continue nil))
+          ('BITWISE_AND_ASSIGNMENT
+           (setq
+            return-string
+            (format
+             "(plist-put return-item 'value (logand (plist-get return-item 'value) %s))"
+             (emacs-wisent-grammar-converter--token-value namespace)))
+           (setq continue nil))
+          ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS))
+          ('MEMBER_OPERATOR
+           (setq
+            return-string
+            (format
+             "(plist-put return-string %s)"
+             (emacs-wisent-grammar-converter--member-operator
+              "return-item"
+              namespace)))
+           (setq continue nil))
+          (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
+    return-string))
 
 (defun emacs-wisent-grammar-converter--function (name namespace)
   "Parse function NAME and NAMESPACE."

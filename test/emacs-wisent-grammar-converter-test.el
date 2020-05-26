@@ -510,7 +510,6 @@
   (message "Passed test: ternary expression in function arguments")
   ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
 
-  ;; TODO
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -530,7 +529,7 @@
              (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'VARIABLE "ZEND_ACC_STATIC")
              (list 'SEMICOLON ";")))
-           ""))
+           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'flags (logior (plist-get return-item 'flags) ZEND_ACC_STATIC)) return-item)"))
   (message "Passed test: De-referenced variable first test")
   ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
 
