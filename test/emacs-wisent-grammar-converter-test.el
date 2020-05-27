@@ -389,9 +389,9 @@
              (list 'MEMBER_OPERATOR "->")
              (list 'VARIABLE "attr")
              (list 'ASSIGNMENT "=")
-             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+             (list 'SYMBOL "zend_name_not_fq")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(plist-put return-string 'attr ZEND_NAME_NOT_FQ) return-item)"))
+           "(let ((return-item '(value $$)))(plist-put return-string 'attr 'zend_name_not_fq) return-item)"))
   (message "Passed test: set attribute of return-item")
 
   (should (equal
@@ -405,9 +405,9 @@
              (list 'MEMBER_OPERATOR "->")
              (list 'VARIABLE "attr")
              (list 'ASSIGNMENT "=")
-             (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+             (list 'SYMBOL "zend_name_not_fq")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value parameter-1)(plist-put return-string 'attr ZEND_NAME_NOT_FQ) return-item)"))
+           "(let ((parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value parameter-1)(plist-put return-string 'attr 'zend_name_not_fq) return-item)"))
   (message "Passed test: set return-item to parameter and then change attribute of return-item")
 
   ;; Support things like    $$ = $2; $$->attr |= ZEND_TYPE_NULLABLE;
@@ -422,9 +422,9 @@
              (list 'MEMBER_OPERATOR "->")
              (list 'VARIABLE "attr")
              (list 'BITWISE_OR_ASSIGNMENT "|=")
-             (list 'VARIABLE "ZEND_TYPE_NULLABLE")
+             (list 'SYMBOL "zend_type_nullable")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) ZEND_TYPE_NULLABLE)) return-item)"))
+           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'attr (logior (plist-get return-item 'attr) 'zend_type_nullable)) return-item)"))
   (message "Passed test: set return-item to parameter and then change attribute with a bitwise-or assignment of return-item")
 
   ;; CG(extra_fn_flags) = $9;
@@ -450,9 +450,9 @@
              (list 'VARIABLE "extra_fn_flags")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'BITWISE_OR_ASSIGNMENT "|=")
-             (list 'VARIABLE "ZEND_ACC_GENERATOR")
+             (list 'SYMBOL "zend_acc_generator")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logior (CG 'extra_fn_flags) ZEND_ACC_GENERATOR)) return-item)"))
+           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logior (CG 'extra_fn_flags) 'zend_acc_generator)) return-item)"))
   (message "Passed test: set function-value via bitwise-or-assignment")
 
   ;; CG(extra_fn_flags) &= ZEND_ACC_GENERATOR;
@@ -464,9 +464,9 @@
              (list 'VARIABLE "extra_fn_flags")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'BITWISE_AND_ASSIGNMENT "|=")
-             (list 'VARIABLE "ZEND_ACC_GENERATOR")
+             (list 'SYMBOL "zend_acc_generator")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logand (CG 'extra_fn_flags) ZEND_ACC_GENERATOR)) return-item)"))
+           "(let ((return-item '(value $$)))(CG 'extra_fn_flags (logand (CG 'extra_fn_flags) 'zend_acc_generator)) return-item)"))
   (message "Passed test: set function-value via bitwise-and-assignment")
 
   ;; $$ |= ZEND_ACC_PUBLIC;
@@ -475,9 +475,9 @@
             (list
              (list 'RETURN "$$")
              (list 'BITWISE_OR_ASSIGNMENT "|=")
-             (list 'VARIABLE "ZEND_ACC_PUBLIC")
+             (list 'SYMBOL "zend_acc_public")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(plist-put return-item 'value (logior (plist-get return-item 'value) ZEND_ACC_PUBLIC)) return-item)"))
+           "(let ((return-item '(value $$)))(plist-put return-item 'value (logior (plist-get return-item 'value) 'zend_acc_public)) return-item)"))
   (message "Passed test: assign return-item bitwise-or of variable")
 
   ;; $$ &= ZEND_ACC_PUBLIC;
@@ -486,9 +486,9 @@
             (list
              (list 'RETURN "$$")
              (list 'BITWISE_AND_ASSIGNMENT "|=")
-             (list 'VARIABLE "ZEND_ACC_PUBLIC")
+             (list 'SYMBOL "zend_acc_public")
              (list 'SEMICOLON ";")))
-           "(let ((return-item '(value $$)))(plist-put return-item 'value (logand (plist-get return-item 'value) ZEND_ACC_PUBLIC)) return-item)"))
+           "(let ((return-item '(value $$)))(plist-put return-item 'value (logand (plist-get return-item 'value) 'zend_acc_public)) return-item)"))
   (message "Passed test: assign return-item bitwise-and of variable")
 
   (should (equal
@@ -498,14 +498,14 @@
              (list 'ASSIGNMENT "=")
              (list 'FUNCTION "zend_ast_create_decl")
              (list 'OPEN_PARENTHESIS "(")
-             (list 'VARIABLE "ZEND_AST_CLOSURE")
+             (list 'SYMBOL "zend_ast_closure")
              (list 'COMMA ",")
              (list 'PARAMETER "$2")
              (list 'BITWISE_OR "|")
              (list 'PARAMETER "$13")
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl ZEND_AST_CLOSURE (logior parameter-2 parameter-13))) return-item)"))
+           "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_closure (logior parameter-2 parameter-13))) return-item)"))
   (message "Passed test: bitwise-or on function arguments")
 
   (should (equal
@@ -515,14 +515,14 @@
              (list 'ASSIGNMENT "=")
              (list 'FUNCTION "zend_ast_create_decl")
              (list 'OPEN_PARENTHESIS "(")
-             (list 'VARIABLE "ZEND_AST_CLOSURE")
+             (list 'SYMBOL "zend_ast_closure")
              (list 'COMMA ",")
              (list 'PARAMETER "$2")
              (list 'BITWISE_AND "&")
              (list 'PARAMETER "$13")
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl ZEND_AST_CLOSURE (logand parameter-2 parameter-13))) return-item)"))
+           "(let ((parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_closure (logand parameter-2 parameter-13))) return-item)"))
   (message "Passed test: bitwise-and on function arguments")
 
   (should (equal
@@ -532,7 +532,7 @@
              (list 'ASSIGNMENT "=")
              (list 'FUNCTION "zend_ast_create")
              (list 'OPEN_PARENTHESIS "(")
-             (list 'VARIABLE "ZEND_AST_PROP_ELEM")
+             (list 'SYMBOL "zend_ast_prop_elem")
              (list 'COMMA ",")
              (list 'PARAMETER "$1")
              (list 'COMMA ",")
@@ -550,7 +550,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-2 '(value $2))(parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create ZEND_AST_PROP_ELEM parameter-1 nil (if parameter-2 (zend_ast_create_zval_from_str parameter-2) nil))) return-item)"))
+           "(let ((parameter-2 '(value $2))(parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create 'zend_ast_prop_elem parameter-1 nil (if parameter-2 (zend_ast_create_zval_from_str parameter-2) nil))) return-item)"))
   (message "Passed test: ternary expression in function arguments")
   ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
 
@@ -571,9 +571,9 @@
              (list 'MEMBER_OPERATOR "->")
              (list 'VARIABLE "flags")
              (list 'BITWISE_OR_ASSIGNMENT "|=")
-             (list 'VARIABLE "ZEND_ACC_STATIC")
+             (list 'SYMBOL "zend_acc_static")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'flags (logior (plist-get return-item 'flags) ZEND_ACC_STATIC)) return-item)"))
+           "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(plist-put return-string 'flags (logior (plist-get return-item 'flags) 'zend_acc_static)) return-item)"))
   (message "Passed test: de-referenced variable first test")
   ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
 
@@ -585,9 +585,9 @@
              (list 'ASSIGNMENT "=")
              (list 'FUNCTION "zend_ast_create_decl")
              (list 'OPEN_PARENTHESIS "(")
-             (list 'VARIABLE "ZEND_AST_CLASS")
+             (list 'SYMBOL "zend_ast_class")
              (list 'COMMA ",")
-             (list 'VARIABLE "ZEND_ACC_ANON_CLASS")
+             (list 'SYMBOL "zend_acc_anon_class")
              (list 'COMMA ",")
              (list 'PARAMETER "$2")
              (list 'COMMA ",")
@@ -608,14 +608,14 @@
              (list 'ASSIGNMENT "=")
              (list 'FUNCTION "zend_ast_create")
              (list 'OPEN_PARENTHESIS "(")
-             (list 'VARIABLE "ZEND_AST_NEW")
+             (list 'SYMBOL "zend_ast_new")
              (list 'COMMA ",")
              (list 'VARIABLE "decl")
              (list 'COMMA ",")
              (list 'PARAMETER "$3")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((parameter-3 '(value $3))(parameter-8 '(value $8))(parameter-5 '(value $5))(parameter-4 '(value $4))(parameter-6 '(value $6))(parameter-2 '(value $2))(return-item '(value $$)))(setq decl (zend_ast_create_decl ZEND_AST_CLASS ZEND_ACC_ANON_CLASS parameter-2 parameter-6 nil parameter-4 parameter-5 parameter-8 nil))(plist-put return-item 'value (zend_ast_create ZEND_AST_NEW decl parameter-3)) return-item)"))
+           "(let ((parameter-3 '(value $3))(parameter-8 '(value $8))(parameter-5 '(value $5))(parameter-4 '(value $4))(parameter-6 '(value $6))(parameter-2 '(value $2))(return-item '(value $$)))(setq decl (zend_ast_create_decl 'zend_ast_class 'zend_acc_anon_class parameter-2 parameter-6 nil parameter-4 parameter-5 parameter-8 nil))(plist-put return-item 'value (zend_ast_create 'zend_ast_new decl parameter-3)) return-item)"))
   (message "Passed test: de-referenced variable second test")
   ;; {
   ;; 	zend_ast *decl = zend_ast_create_decl(

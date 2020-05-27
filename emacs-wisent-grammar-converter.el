@@ -642,7 +642,7 @@
           ('COMMA)
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level)))
-          ((or 'VARIABLE 'FUNCTION 'PARAMETER 'NULL)
+          ((or 'VARIABLE 'FUNCTION 'PARAMETER 'SYMBOL 'NULL)
            (let ((parsed-token-value (emacs-wisent-grammar-converter--token-value namespace token)))
              (let ((next-is-bitwise-or
                     (and
@@ -721,6 +721,11 @@
       ('VARIABLE
        (format
         "%s%s"
+        namespace
+        token-value))
+      ('SYMBOL
+       (format
+        "'%s%s"
         namespace
         token-value))
       ('PARAMETER
