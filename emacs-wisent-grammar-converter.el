@@ -37,6 +37,11 @@
 ;;; Code:
 
 
+(defun emacs-wisent-grammar-converter--reformat-logic-block (string &optional namespace)
+  "Lex and then parse STRING into Emacs Lisp, use optional NAMESPACE if specified."
+  (let ((tokens (emacs-wisent-grammar-converter--lex-c-string string)))
+    (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp tokens namespace)))
+
 (defun emacs-wisent-grammar-converter--string-trim (string)
   "Trim STRING from white-space."
   (emacs-wisent-grammar-converter--string-trim-left (emacs-wisent-grammar-converter--string-trim-right string)))
@@ -101,7 +106,7 @@
               (push (list 'POINTER (match-string 3 string)) tokens)
               (setq start (match-end 3)))
           (push (list 'VARIABLE (match-string 2 string)) tokens)
-        (setq start (match-end 2))))
+          (setq start (match-end 2))))
        ((equal
          (string-match
           "\"\\([^\"]*\\)\""
@@ -226,7 +231,7 @@
            (list
             'PARAMETER
             (match-string 0 string))
-            tokens))
+           tokens))
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -391,10 +396,10 @@
             ('POINTER
              (unless (string= token-value "")
                (setq
-              return-string
-              (concat
-               return-string
-               (emacs-wisent-grammar-converter--variable token-value namespace)))))
+                return-string
+                (concat
+                 return-string
+                 (emacs-wisent-grammar-converter--variable token-value namespace)))))
             ('FUNCTION
              (setq
               return-string

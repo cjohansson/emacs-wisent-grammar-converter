@@ -24,7 +24,8 @@
 
 ;; Run from terminal with `make test'
 
-;; TODO Add parsers tests for symbol tokens
+;; TODO Add tests for converting C to Emacs-Lisp
+;; TODO Refactor code into separate files
 
 
 ;;; Code:
@@ -33,6 +34,41 @@
 (require 'ert)
 
 (message "\nUnit tests started\n")
+
+(defun emacs-wisent-grammar-converter-test--reformat-logic-block()
+  "Test conversion of C to Wisent Emacs-Lisp."
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     "$$ = zend_ast_append_str($1, $3);")
+    "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_append_str parameter-1 parameter-3)) return-item)"
+    ))
+  (message "Passed test 2")
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     "$$ = zend_ast_create(ZEND_AST_HALT_COMPILER,
+			      zend_ast_create_zval_from_long(zend_get_scanned_file_offset()));
+			  zend_stop_lexing();")
+    "(let ((return-item '(value $$)))(mask) return-item)"
+    ))
+  (message "Passed test 1")
+  
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     "			zval zv;
+			zend_lex_tstring(&zv);
+			$$ = zend_ast_create_zval(&zv);
+")
+    "(let ((return-item '(value $$)))(mask) return-item)"
+    ))
+  (message "Passed test 3")
+
+
+  )
 
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()
   "Test `emacs-wisent-grammar-converter-test--lex-c-string'"
@@ -628,6 +664,7 @@
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
 (emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp)
+(emacs-wisent-grammar-converter-test--reformat-logic-block)
 
 (message "\nUnit tests completed\n")
 
