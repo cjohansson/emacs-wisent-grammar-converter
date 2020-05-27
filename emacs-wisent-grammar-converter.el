@@ -517,7 +517,7 @@
 
 (defun emacs-wisent-grammar-converter--function (name namespace)
   "Parse function NAME and NAMESPACE."
-  ;; Skip first OPENING_PARENTHESIS
+  ;; Skip first OPEN_PARENTHESIS token
   (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
 
   (let ((argument-string nil)
@@ -601,21 +601,27 @@
                name
                (emacs-wisent-grammar-converter--token-value namespace)))))
           ('CLOSE_PARENTHESIS
-           (setq closed t)
-           (if argument-string
+           (when closed
+             (push
+              token
+              emacs-wisent-grammar-converter--lexer-tokens-stack)
+             (setq continue nil))
+           (unless closed
+             (if argument-string
+                 (setq
+                  return-string
+                  (format
+                   "(%s%s %s)"
+                   namespace
+                   name
+                   argument-string))
                (setq
                 return-string
                 (format
-                 "(%s%s %s)"
+                 "(%s%s)"
                  namespace
-                 name
-                 argument-string))
-             (setq
-              return-string
-              (format
-               "(%s%s)"
-               namespace
-               name))))
+                 name)))
+             (setq closed t)))
           (_
            (if closed
                (progn

@@ -44,7 +44,7 @@
      "$$ = zend_ast_append_str($1, $3);")
     "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_append_str parameter-1 parameter-3)) return-item)"
     ))
-  (message "Passed test 2")
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 1")
 
   (should
    (equal
@@ -52,10 +52,11 @@
      "$$ = zend_ast_create(ZEND_AST_HALT_COMPILER,
 			      zend_ast_create_zval_from_long(zend_get_scanned_file_offset()));
 			  zend_stop_lexing();")
-    "(let ((return-item '(value $$)))(mask) return-item)"
+    "(let ((return-item '(value $$)))(plist-put return-item 'value (zend_ast_create 'zend_ast_halt_compiler (zend_ast_create_zval_from_long (zend_get_scanned_file_offset))))(zend_stop_lexing) return-item)"
     ))
-  (message "Passed test 1")
-  
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 2")
+
+  ;; TODO
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
@@ -65,7 +66,7 @@
 ")
     "(let ((return-item '(value $$)))(mask) return-item)"
     ))
-  (message "Passed test 3")
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 3")
 
 
   )
@@ -316,6 +317,31 @@
             (list 'SEMICOLON ";"))))
   (message "Passed lexer test lexing of de-referenced variable 2")
 
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "$$ = zend_ast_create(ZEND_AST_HALT_COMPILER,
+			      zend_ast_create_zval_from_long(zend_get_scanned_file_offset()));
+			  zend_stop_lexing();")
+           (list
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "zend_ast_create")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'SYMBOL "zend_ast_halt_compiler")
+            (list 'COMMA ",")
+            (list 'FUNCTION "zend_ast_create_zval_from_long")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'FUNCTION "zend_get_scanned_file_offset")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")
+            (list 'FUNCTION "zend_stop_lexing")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";"))))
+    (message "Passed test assignment with nested function-calls")
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
@@ -659,6 +685,31 @@
   ;; 		$4, $5, $8, NULL);
   ;; 	$$ = zend_ast_create(ZEND_AST_NEW, decl, $3);
   ;; }
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+     (list
+      (list 'RETURN "$$")
+      (list 'ASSIGNMENT "=")
+      (list 'FUNCTION "zend_ast_create")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'SYMBOL "zend_ast_halt_compiler")
+      (list 'COMMA ",")
+      (list 'FUNCTION "zend_ast_create_zval_from_long")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'FUNCTION "zend_get_scanned_file_offset")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SEMICOLON ";")
+      (list 'FUNCTION "zend_stop_lexing")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SEMICOLON ";")))
+    "(let ((return-item '(value $$)))(plist-put return-item 'value (zend_ast_create 'zend_ast_halt_compiler (zend_ast_create_zval_from_long (zend_get_scanned_file_offset))))(zend_stop_lexing) return-item)"))
+  (message "Passed test: assignment with nested function calls without arguments")
 
   )
 
