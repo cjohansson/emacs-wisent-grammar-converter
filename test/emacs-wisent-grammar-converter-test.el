@@ -24,6 +24,8 @@
 
 ;; Run from terminal with `make test'
 
+;; TODO Make upper-case variables into symbols
+
 
 ;;; Code:
 
@@ -614,7 +616,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
            "(let ((parameter-3 '(value $3))(parameter-8 '(value $8))(parameter-5 '(value $5))(parameter-4 '(value $4))(parameter-6 '(value $6))(parameter-2 '(value $2))(return-item '(value $$)))(setq decl (zend_ast_create_decl ZEND_AST_CLASS ZEND_ACC_ANON_CLASS parameter-2 parameter-6 nil parameter-4 parameter-5 parameter-8 nil))(plist-put return-item 'value (zend_ast_create ZEND_AST_NEW decl parameter-3)) return-item)"))
-  (message "Passed test: De-referenced variable second test")
+  (message "Passed test: de-referenced variable second test")
   ;; {
   ;; 	zend_ast *decl = zend_ast_create_decl(
   ;; 		ZEND_AST_CLASS, ZEND_ACC_ANON_CLASS, $<num>2, $6, NULL,

@@ -423,11 +423,11 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('ASSIGNMENT
-       (format
-        "(setq %s%s %s)"
-        namespace
-        name
-        (emacs-wisent-grammar-converter--token-value namespace)))
+       (let ((formatted-name (concat namespace name)))
+         (format
+          "(setq %s %s)"
+          formatted-name
+          (emacs-wisent-grammar-converter--token-value namespace))))
       ('MEMBER_OPERATOR
        (format
         "(put %s%s '%s)"
