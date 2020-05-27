@@ -68,7 +68,6 @@
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 3")
 
-
   )
 
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()
@@ -341,7 +340,19 @@
             (list 'OPEN_PARENTHESIS "(")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
-    (message "Passed test assignment with nested function-calls")
+  (message "Passed test assignment with nested function-calls")
+
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "			zval zv;
+			zend_lex_tstring(&zv);
+			$$ = zend_ast_create_zval(&zv);
+")
+           (list
+            (list 'DECLARATION "zval") (list 'VARIABLE "zv") (list 'SEMICOLON ";") (list 'FUNCTION "zend_lex_tstring") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";") (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'FUNCTION "zend_ast_create_zval") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";"))))
+  (message "Passed test assignment with nested function with referenced variable")
+
+  
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
@@ -710,6 +721,14 @@
       (list 'SEMICOLON ";")))
     "(let ((return-item '(value $$)))(plist-put return-item 'value (zend_ast_create 'zend_ast_halt_compiler (zend_ast_create_zval_from_long (zend_get_scanned_file_offset))))(zend_stop_lexing) return-item)"))
   (message "Passed test: assignment with nested function calls without arguments")
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+     (list
+      (list 'DECLARATION "zval") (list 'VARIABLE "zv") (list 'SEMICOLON ";") (list 'FUNCTION "zend_lex_tstring") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";") (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'FUNCTION "zend_ast_create_zval") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";")))
+    "nil"))
+  (message "Passed test: function call with referenced variable")
 
   )
 
