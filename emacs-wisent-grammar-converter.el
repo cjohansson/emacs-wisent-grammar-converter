@@ -90,15 +90,17 @@
         (setq start (match-end 1)))
        ((equal
          (string-match
-          "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z_][a-zA-Z0-9_]*\\|\*\\)"
+          "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z_][a-zA-Z0-9_]*\\|\*\\([a-zA-Z_]*[a-zA-Z0-9_]*\\)\\)"
           string
           start)
          start)
         (push (list 'DECLARATION (match-string 1 string)) tokens)
-        (if (string= (match-string 2 string) "*")
-            (push (list 'POINTER (match-string 2 string)) tokens)
-          (push (list 'VARIABLE (match-string 2 string)) tokens))
-        (setq start (match-end 2)))
+        (if (string-match-p "\*[a-zA-Z_]*[a-zA-Z0-9_]*" (match-string 2 string))
+            (progn
+              (push (list 'POINTER (match-string 3 string)) tokens)
+              (setq start (match-end 3)))
+          (push (list 'VARIABLE (match-string 2 string)) tokens)
+        (setq start (match-end 2))))
        ((equal
          (string-match
           "\"\\([^\"]*\\)\""
@@ -197,11 +199,25 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
-          "\\$[0-9]*"
+          "\\$\\(<[a-zA-Z]+>\\)?\\([0-9]+\\)"
           string
           start)
          start)
-        (push (list 'PARAMETER (match-string 0 string)) tokens)
+        ;; $<num>2 is actually a casted value that is not supported in lisp
+        (if (string-match-p
+             "\\$<[a-zA-Z]+>[0-9]+"
+             (match-string 0 string))
+            (progn
+              (push
+               (list
+                'PARAMETER
+                (concat "$" (match-string 2 string)))
+               tokens))
+          (push
+           (list
+            'PARAMETER
+            (match-string 0 string))
+            tokens))
         (setq start (match-end 0)))
        ((equal
          (string-match
