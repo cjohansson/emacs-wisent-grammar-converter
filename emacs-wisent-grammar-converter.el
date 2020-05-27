@@ -378,7 +378,14 @@
                (token-value (car (cdr token))))
           ;; (message "token %s, id: %s, value: %s" token token-id token-value)
           (pcase token-id
-            ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION 'POINTER))
+            ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION))
+            ('POINTER
+             (unless (string= token-value "")
+               (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--variable token-value namespace)))))
             ('FUNCTION
              (setq
               return-string
