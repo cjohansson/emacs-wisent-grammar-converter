@@ -24,7 +24,7 @@
 
 ;; Run from terminal with `make test'
 
-;; TODO Make upper-case variables into symbols
+;; TODO Add parsers tests for symbol tokens
 
 
 ;;; Code:
@@ -65,9 +65,9 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create_ex")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "ZEND_AST_INCLUDE_OR_EVAL")
+            (list 'SYMBOL "zend_ast_include_or_eval")
             (list 'COMMA ",")
-            (list 'VARIABLE "ZEND_REQUIRE_ONCE")
+            (list 'SYMBOL "zend_require_once")
             (list 'COMMA ",")
             (list 'PARAMETER "$2")
             (list 'CLOSE_PARENTHESIS ")")
@@ -91,7 +91,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "ZEND_AST_TRAIT_ALIAS")
+            (list 'SYMBOL "zend_ast_trait_alias")
             (list 'COMMA ",")
             (list 'PARAMETER "$1")
             (list 'COMMA ",")
@@ -112,7 +112,7 @@
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "attr")
             (list 'ASSIGNMENT "=")
-            (list 'VARIABLE "ZEND_NAME_NOT_FQ")
+            (list 'SYMBOL "zend_name_not_fq")
             (list 'SEMICOLON ";"))))
 
   (should (equal
@@ -124,7 +124,7 @@
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "attr")
             (list 'BITWISE_OR_ASSIGNMENT "|=")
-            (list 'VARIABLE "ZEND_TYPE_NULLABLE")
+            (list 'SYMBOL "zend_type_nullable")
             (list 'SEMICOLON ";"))))
 
   (should (equal
@@ -135,7 +135,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "ZEND_AST_PROP_ELEM")
+            (list 'SYMBOL "zend_ast_prop_elem")
             (list 'COMMA ",")
             (list 'PARAMETER "$1")
             (list 'COMMA ",")
@@ -175,7 +175,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create_decl")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "ZEND_AST_CLOSURE")
+            (list 'SYMBOL "zend_ast_closure")
             (list 'COMMA ",")
             (list 'PARAMETER "$2")
             (list 'BITWISE_OR "|")
@@ -208,7 +208,7 @@
             (list 'PARAMETER "$8")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";")
-            (list 'FUNCTION "CG")
+            (list 'FUNCTION "cg")
             (list 'OPEN_PARENTHESIS "(")
             (list 'VARIABLE "extra_fn_flags")
             (list 'CLOSE_PARENTHESIS ")")
@@ -235,7 +235,7 @@
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "flags")
             (list 'BITWISE_OR_ASSIGNMENT "|=")
-            (list 'VARIABLE "ZEND_ACC_STATIC")
+            (list 'SYMBOL "zend_acc_static")
             (list 'SEMICOLON ";"))))
   (message "Passed lexer test lexing of de-referenced variable")
 
@@ -248,9 +248,9 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create_decl")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "ZEND_AST_CLASS")
+            (list 'SYMBOL "zend_ast_class")
             (list 'COMMA ",")
-            (list 'VARIABLE "ZEND_ACC_ANON_CLASS")
+            (list 'SYMBOL "zend_acc_anon_class")
             (list 'COMMA ",")
             (list 'PARAMETER "$2")
             (list 'COMMA ",")
@@ -271,7 +271,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'VARIABLE "ZEND_AST_NEW")
+            (list 'SYMBOL "zend_ast_new")
             (list 'COMMA ",")
             (list 'VARIABLE "decl")
             (list 'COMMA ",")

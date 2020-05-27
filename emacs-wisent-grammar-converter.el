@@ -53,7 +53,8 @@
   "Run lexer on STRING, return list of tokens."
   (let ((tokens '())
         (continue t)
-        (start 0))
+        (start 0)
+        (case-fold-search nil))
     (while continue
       (cond
        ((equal
@@ -70,7 +71,7 @@
           string
           start)
          start)
-        (push (list 'FUNCTION (match-string 1 string)) tokens)
+        (push (list 'FUNCTION (downcase (match-string 1 string))) tokens)
         (setq start (match-end 1)))
        ((equal
          (string-match
@@ -111,7 +112,7 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
-          "null"
+          "\\(null\\|NULL\\)"
           string
           start)
          start)
@@ -119,11 +120,19 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
+          "[A-Z_]+[A-Z_0-9]*"
+          string
+          start)
+         start)
+        (push (list 'SYMBOL (downcase (match-string 0 string))) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
           "[a-zA-Z_][a-zA-Z0-9_]*"
           string
           start)
          start)
-        (push (list 'VARIABLE (match-string 0 string)) tokens)
+        (push (list 'VARIABLE (downcase (match-string 0 string))) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
