@@ -100,6 +100,13 @@
      "")))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
 
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; } }"
+     "")))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 8")
+
   )
 
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()
