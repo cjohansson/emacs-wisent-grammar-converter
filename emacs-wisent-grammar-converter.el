@@ -733,20 +733,11 @@
                       ternary-false)))))
                 ((or next-is-bitwise-or
                      next-is-bitwise-and)
-                 (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-                 (let ((next-token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-                       (operator "logior"))
-                   (when next-is-bitwise-and
-                     (setq operator "logand"))
-                   (setq
-                    return-string
-                    (concat
-                     return-string
-                     (format
-                      "(%s %s %s)"
-                      operator
-                      parsed-token-value
-                      (emacs-wisent-grammar-converter--token-value namespace next-token))))))
+                 (setq
+                  return-string
+                  (concat
+                   return-string
+                   (emacs-wisent-grammar-converter--bitwise-token-value namespace token))))
                 (t
                  (setq
                   return-string
@@ -768,6 +759,54 @@
               emacs-wisent-grammar-converter--lexer-tokens-stack)
              (setq continue nil)))
           (_ (signal 'error (list (format "Unexpected function arguments token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
+    return-string))
+
+(defun emacs-wisent-grammar-converter--bitwise-token-value (namespace first-token)
+  "Return bitwise value of first-token in NAMESPACE."
+  (let ((return-string "")
+        (continue t)
+        (in-bitwise-or nil)
+        (in-bitwise-and nil))
+    (while (and continue
+                emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('BITWISE_OR
+           (when in-bitwise-and
+             (signal 'error (list (format "Cannot combined bitwise OR with AND in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (unless in-bitwise-or
+             (setq in-bitwise-or t)
+             (setq
+              return-string
+              (concat
+               "(logior "
+               (emacs-wisent-grammar-converter--token-value namespace first-token)))))
+          ('BITWISE_AND
+           (when in-bitwise-or
+             (signal 'error (list (format "Cannot combined bitwise OR with AND in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (unless in-bitwise-and
+             (setq in-bitwise-and t)
+             (setq
+              return-string
+              (concat
+               "(logand "
+               (emacs-wisent-grammar-converter--token-value namespace first-token)))))
+          ((or 'VARIABLE 'PARAMETER 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
+           (unless (or in-bitwise-or in-bitwise-and)
+             (signal 'error (list (format "Unexpected bitwise token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (let ((parsed-token-value (emacs-wisent-grammar-converter--token-value namespace token)))
+             (setq return-string (concat return-string " " parsed-token-value))))
+          ((or 'SEMICOLON 'CLOSE_PARENTHESIS 'COMMA)
+           (unless (or in-bitwise-or in-bitwise-and)
+             (signal 'error (list (format "Unexpected bitwise token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (push token emacs-wisent-grammar-converter--lexer-tokens-stack)
+           (setq continue nil))
+          (_ (signal 'error (list (format "Unexpected bitwise token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
+    (setq
+     return-string
+     (concat return-string ")"))
     return-string))
 
 (defun emacs-wisent-grammar-converter--token-value (namespace &optional token)

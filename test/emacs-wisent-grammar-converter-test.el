@@ -83,6 +83,13 @@
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 5")
 
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     " $$ = zend_ast_create_decl(ZEND_AST_METHOD, $3 | $1 | $12, $2, $5,
+				  zend_ast_get_str($4), $7, NULL, $11, $9); CG(extra_fn_flags) = $10; ")
+    "(let ((parameter-10 '(value $10))(parameter-9 '(value $9))(parameter-11 '(value $11))(parameter-7 '(value $7))(parameter-4 '(value $4))(parameter-5 '(value $5))(parameter-2 '(value $2))(parameter-12 '(value $12))(parameter-1 '(value $1))(parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_method (logior parameter-3 parameter-1 parameter-12) parameter-2 parameter-5 (zend_ast_get_str parameter-4) parameter-7 nil parameter-11 parameter-9))(cg 'extra_fn_flags parameter-10) return-item)"))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 6")
 
   )
 
