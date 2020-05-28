@@ -438,6 +438,15 @@
               (concat
                return-string
                (emacs-wisent-grammar-converter--function token-value namespace))))
+            ('SYMBOL
+             (setq
+              return-string
+              (concat
+               return-string
+               (format
+                "(setq return-item '%s%s)"
+                namespace
+                token-value))))
             ('VARIABLE
              (setq
               return-string
@@ -745,6 +754,12 @@
                    return-string
                    parsed-token-value))))
                (setq return-count (1+ return-count)))))
+          ('STRING
+           (format
+            "\"%s\""
+            token-value))
+          ('INTEGER
+           token-value)
           ('CLOSE_PARENTHESIS
            (setq bracket-level (1- bracket-level))
            (when (= bracket-level 0)

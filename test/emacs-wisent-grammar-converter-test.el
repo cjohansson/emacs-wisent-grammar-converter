@@ -24,7 +24,6 @@
 
 ;; Run from terminal with `make test'
 
-;; TODO Add tests for converting C to Emacs-Lisp
 ;; TODO Refactor code into separate files
 
 
@@ -66,6 +65,24 @@
     "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval zv)) return-item)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 3")
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     " $$ = zend_ast_list_add($1, $3); ")
+    "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_list_add parameter-1 parameter-3)) return-item)"
+    ))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 4")
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     " $$ = NULL; zend_throw_exception(zend_ce_compile_error,
+			      \"__HALT_COMPILER() can only be used from the outermost scope\", 0); YYERROR; ")
+    "(let ((return-item '(value $$)))(plist-put return-item 'value nil)(zend_throw_exception zend_ce_compile_error)(setq return-item 'yyerror) return-item)"
+    ))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 5")
+
 
   )
 
