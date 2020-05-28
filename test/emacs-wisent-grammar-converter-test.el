@@ -91,6 +91,15 @@
     "(let ((parameter-10 '(value $10))(parameter-9 '(value $9))(parameter-11 '(value $11))(parameter-7 '(value $7))(parameter-4 '(value $4))(parameter-5 '(value $5))(parameter-2 '(value $2))(parameter-12 '(value $12))(parameter-1 '(value $1))(parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_method (logior parameter-3 parameter-1 parameter-12) parameter-2 parameter-5 (zend_ast_get_str parameter-4) parameter-7 nil parameter-11 parameter-9))(cg 'extra_fn_flags parameter-10) return-item)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 6")
 
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     "			$$ = $2;
+			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
+		"
+     "")))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
+
   )
 
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()

@@ -96,6 +96,14 @@
         (setq start (match-end 1)))
        ((equal
          (string-match
+          "\\(if\\|IF\\)[\n\t ]*("
+          string
+          start)
+         start)
+        (push (list 'IF (match-string 1 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
           "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z_][a-zA-Z0-9_]*\\|\*\\([a-zA-Z_]*[a-zA-Z0-9_]*\\)\\)"
           string
           start)
