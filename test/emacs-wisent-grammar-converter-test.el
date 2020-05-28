@@ -251,7 +251,7 @@
             (list 'ASSIGNMENT "=")
             (list 'PARAMETER "$9")
             (list 'SEMICOLON ";"))))
-  (message "Passed lexer test with strings and integers")
+  (message "Passed lexer test: with strings and integers")
 
   (should (equal
            (emacs-wisent-grammar-converter--lex-c-string
@@ -273,7 +273,7 @@
             (list 'BITWISE_OR_ASSIGNMENT "|=")
             (list 'SYMBOL "zend_acc_static")
             (list 'SEMICOLON ";"))))
-  (message "Passed lexer test lexing of de-referenced variable")
+  (message "Passed lexer test: lexing of de-referenced variable")
 
   (should (equal
            (emacs-wisent-grammar-converter--lex-c-string
@@ -314,7 +314,7 @@
             (list 'PARAMETER "$3")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
-  (message "Passed lexer test lexing of de-referenced variable 2")
+  (message "Passed lexer test: lexing of de-referenced variable 2")
 
   (should (equal
            (emacs-wisent-grammar-converter--lex-c-string
@@ -340,7 +340,7 @@
             (list 'OPEN_PARENTHESIS "(")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
-  (message "Passed test assignment with nested function-calls")
+  (message "Passed lexer test: assignment with nested function-calls")
 
   (should (equal
            (emacs-wisent-grammar-converter--lex-c-string
@@ -349,10 +349,23 @@
 			$$ = zend_ast_create_zval(&zv);
 ")
            (list
-            (list 'DECLARATION "zval") (list 'VARIABLE "zv") (list 'SEMICOLON ";") (list 'FUNCTION "zend_lex_tstring") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";") (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'FUNCTION "zend_ast_create_zval") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";"))))
-  (message "Passed test assignment with nested function with referenced variable")
+            (list 'DECLARATION "zval")
+            (list 'VARIABLE "zv")
+            (list 'SEMICOLON ";")
+            (list 'FUNCTION "zend_lex_tstring")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'REFERENCE "zv")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "zend_ast_create_zval")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'REFERENCE "zv")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";"))))
+  (message "Passed lexer test: assignment with nested function with referenced variable")
 
-  
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
@@ -726,8 +739,22 @@
    (equal
     (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
      (list
-      (list 'DECLARATION "zval") (list 'VARIABLE "zv") (list 'SEMICOLON ";") (list 'FUNCTION "zend_lex_tstring") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";") (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'FUNCTION "zend_ast_create_zval") (list 'OPEN_PARENTHESIS "(") (list 'REFERENCE "zv") (list 'CLOSE_PARENTHESIS ")") (list 'SEMICOLON ";")))
-    "nil"))
+      (list 'DECLARATION "zval")
+      (list 'VARIABLE "zv")
+      (list 'SEMICOLON ";")
+      (list 'FUNCTION "zend_lex_tstring")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'REFERENCE "zv")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SEMICOLON ";")
+      (list 'RETURN "$$")
+      (list 'ASSIGNMENT "=")
+      (list 'FUNCTION "zend_ast_create_zval")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'REFERENCE "zv")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SEMICOLON ";")))
+    "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval (lambda(return) (setq zv return)))) return-item)"))
   (message "Passed test: function call with referenced variable")
 
   )

@@ -355,6 +355,7 @@
     (setq namespace ""))
   
   (let ((return-string nil)
+        (declaration-items nil)
         (property-items '(("return-item" "$$"))))
 
     ;; Generate list of every parameter and return variable in block
@@ -379,6 +380,31 @@
          "(%s '(value %s))"
          (car item)
          (car (cdr item))))))
+
+    ;; Add variables that are declared in body
+    (let ((in-declaration nil))
+      (dolist (item emacs-wisent-grammar-converter--lexer-tokens-stack)
+        (cond
+         (in-declaration
+          (let ((token-id (car item))
+                (token-value (car (cdr item))))
+            (pcase token-id
+              ('VARIABLE
+               (push token-value declaration-items))
+              ((or 'SEMICOLON 'POINTER)
+               (setq in-declaration nil)))))
+         ((equal (car item) 'DECLARATION)
+          (setq in-declaration t)))))
+    (when declaration-items
+      (dolist (item declaration-items)
+        (setq
+         return-string
+         (concat
+          return-string
+          (format
+           "(%s nil)"
+           item)))))
+
     (setq
      return-string
      (concat
@@ -442,13 +468,16 @@
           "(setq %s %s)"
           formatted-name
           (emacs-wisent-grammar-converter--token-value namespace))))
+      ('SEMICOLON
+       ;; A declaration has no equivalent in Emacs-Lisp
+       "")
       ('MEMBER_OPERATOR
        (format
         "(put %s%s '%s)"
         namespace
         name
         (emacs-wisent-grammar-converter--member-operator name namespace)))
-      (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
+      (_ (signal 'error (list (format "Unexpected variable token %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
 
 (defun emacs-wisent-grammar-converter--parameter (name namespace)
   "Parse parameter NAME in NAMESPACE."
@@ -512,7 +541,7 @@
               "return-item"
               namespace)))
            (setq continue nil))
-          (_ (signal 'error (list (format "Unexpected variable token %s" token)))))))
+          (_ (signal 'error (list (format "Unexpected return token %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
     return-string))
 
 (defun emacs-wisent-grammar-converter--function (name namespace)
@@ -653,7 +682,7 @@
           ('COMMA)
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level)))
-          ((or 'VARIABLE 'FUNCTION 'PARAMETER 'SYMBOL 'NULL)
+          ((or 'VARIABLE 'FUNCTION 'PARAMETER 'SYMBOL 'NULL 'REFERENCE)
            (let ((parsed-token-value (emacs-wisent-grammar-converter--token-value namespace token)))
              (let ((next-is-bitwise-or
                     (and
@@ -717,7 +746,7 @@
               token
               emacs-wisent-grammar-converter--lexer-tokens-stack)
              (setq continue nil)))
-          (_ (signal 'error (list (format "Unexpected function arguments token: %s" token)))))))
+          (_ (signal 'error (list (format "Unexpected function arguments token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
     return-string))
 
 (defun emacs-wisent-grammar-converter--token-value (namespace &optional token)
@@ -729,6 +758,11 @@
   (let* ((token-id (car token))
          (token-value (car (cdr token))))
     (pcase token-id
+      ('REFERENCE
+       (format
+        "(lambda(return) (setq %s%s return))"
+        namespace
+        token-value))
       ('VARIABLE
        (format
         "%s%s"
