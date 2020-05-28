@@ -793,6 +793,13 @@
         "%s%s"
         namespace
         token-value))
+      ('STRING
+       (format
+        "\"%s\""
+        token-value))
+      ('INTEGER
+        namespace
+        token-value)
       ('SYMBOL
        (format
         "'%s%s"
