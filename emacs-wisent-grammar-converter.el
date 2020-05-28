@@ -337,6 +337,9 @@
 (defvar emacs-wisent-grammar-converter--lexer-tokens-stack nil
   "A stack of lexer tokens to parse.")
 
+(defvar emacs-wisent-grammar-converter--lex-root-token-id nil
+  "Current root token id.")
+
 (defun emacs-wisent-grammar-converter--parameter-to-plist (parameter)
   "Convert PARAMETER to corresponding property-list variable."
   (format
@@ -417,6 +420,9 @@
                (token-id (car token))
                (token-value (car (cdr token))))
           ;; (message "token %s, id: %s, value: %s" token token-id token-value)
+          (setq
+           emacs-wisent-grammar-converter--lex-root-token-id
+           token-id)
           (pcase token-id
             ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION))
             ('POINTER
@@ -759,10 +765,14 @@
          (token-value (car (cdr token))))
     (pcase token-id
       ('REFERENCE
-       (format
-        "(lambda(return) (setq %s%s return))"
-        namespace
-        token-value))
+       (pcase emacs-wisent-grammar-converter--lex-root-token-id
+         ('RETURN
+          token-value)
+         ('FUNCTION
+          (format
+           "(lambda(return) (setq %s return))"
+           token-value))
+         (_ (signal 'error (list (format "Unexpected reference root token id: %s, remaining tokens: %s" emacs-wisent-grammar-converter--lex-root-token-id emacs-wisent-grammar-converter--lexer-tokens-stack))))))
       ('VARIABLE
        (format
         "%s%s"

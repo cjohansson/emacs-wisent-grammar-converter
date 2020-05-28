@@ -56,7 +56,6 @@
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 2")
 
-  ;; TODO
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
@@ -64,7 +63,7 @@
 			zend_lex_tstring(&zv);
 			$$ = zend_ast_create_zval(&zv);
 ")
-    "(let ((return-item '(value $$)))(mask) return-item)"
+    "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval zv)) return-item)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 3")
 
@@ -754,7 +753,7 @@
       (list 'REFERENCE "zv")
       (list 'CLOSE_PARENTHESIS ")")
       (list 'SEMICOLON ";")))
-    "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval (lambda(return) (setq zv return)))) return-item)"))
+    "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval zv)) return-item)"))
   (message "Passed test: function call with referenced variable")
 
   )
