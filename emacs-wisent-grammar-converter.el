@@ -112,6 +112,22 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
+          "||"
+          string
+          start)
+         start)
+        (push (list 'LOGICAL_OR (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "&&"
+          string
+          start)
+         start)
+        (push (list 'LOGICAL_AND (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
           "\\([a-zA-Z0-9_]+\\)[\t\n ]+\\([a-zA-Z_][a-zA-Z0-9_]*\\|\*\\([a-zA-Z_]*[a-zA-Z0-9_]*\\)\\)"
           string
           start)
