@@ -430,6 +430,15 @@
             (list 'CLOSE_SQUARE_BRACKET "}"))))
   (message "Passed lexer test: if block checking return value")
 
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            "			$$ = $2;
+			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
+		")
+           (list
+            (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'PARAMETER "$2") (list 'SEMICOLON ";") (list 'IF "if") (list 'OPEN_PARENTHESIS "(") (list 'RETURN "$$") (list 'MEMBER_OPERATOR "->") (list 'VARIABLE "kind") (list 'EQUAL "==") (list 'SYMBOL "zend_ast_conditional") (list 'CLOSE_PARENTHESIS ")") (list 'RETURN "$$") (list 'MEMBER_OPERATOR "->") (list 'VARIABLE "attr") (list 'ASSIGNMENT "=") (list 'SYMBOL "zend_parenthesized_conditional") (list 'SEMICOLON ";"))))
+  (message "Passed lexer test: if block changing return value attribute")
+
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()

@@ -542,7 +542,7 @@
        "")
       ('MEMBER_OPERATOR
        (format
-        "(put %s%s '%s)"
+        "(plist-put %s%s '%s)"
         namespace
         name
         (emacs-wisent-grammar-converter--member-operator name namespace)))
@@ -995,7 +995,7 @@
              (emacs-wisent-grammar-converter--logical-prefix
               namespace
               token-id))))
-          ((or 'LOGICAL_OR 'LOGICAL_AND 'LOGICAL_EQUAL 'LOGICAL_NOT_EQUAL 'LOGICAL_GREATER 'LOGICAL_LESSER 'LOGICAL_GREATER_OR_EQUAL 'LOGICAL_LESSER_OR_EQUAL)
+          ((or 'LOGICAL_OR 'LOGICAL_AND 'EQUAL 'LOGICAL_NOT_EQUAL 'LOGICAL_GREATER 'LOGICAL_LESSER 'LOGICAL_GREATER_OR_EQUAL 'LOGICAL_LESSER_OR_EQUAL)
            (setq
             condition-string
             (concat
@@ -1003,7 +1003,39 @@
              (emacs-wisent-grammar-converter--logical-infix
               namespace
               token-id))))
-          ((or 'VARIABLE 'RETURN 'SYMBOL 'FUNCTION 'STRING 'INTEGER 'RETURN)
+          ((or 'PARAMETER 'RETURN)
+           (let ((next-is-member-operator
+                  (and
+                   emacs-wisent-grammar-converter--lexer-tokens-stack
+                   (equal
+                    (car (car emacs-wisent-grammar-converter--lexer-tokens-stack))
+                    'MEMBER_OPERATOR))))
+             (if next-is-member-operator
+                 (progn
+                   ;; Pop member operator
+                   (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+                   (let ((attribute (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+                         (name "return-item"))
+                     (when (equal token-id 'PARAMETER)
+                       (setq
+                        name
+                        (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
+                     (setq
+                      condition-string
+                      (concat
+                       condition-string
+                       (format
+                        "(plist-get %s '%s)"
+                        name
+                        (car (cdr attribute)))))))
+               (setq
+                condition-string
+                (concat
+                 condition-string
+                 (emacs-wisent-grammar-converter--token-value
+                  namespace
+                  token))))))
+          ((or 'VARIABLE 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
            (setq
             condition-string
             (concat
