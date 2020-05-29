@@ -101,6 +101,14 @@
           start)
          start)
         (push (list 'IF (match-string 1 string)) tokens)
+        (setq start (match-end 1)))
+       ((equal
+         (string-match
+          "!"
+          string
+          start)
+         start)
+        (push (list 'LOGICAL_NOT (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -256,6 +264,22 @@
           start)
          start)
         (push (list 'CLOSE_PARENTHESIS (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "{"
+          string
+          start)
+         start)
+        (push (list 'OPEN_SQUARE_BRACKET (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "}"
+          string
+          start)
+         start)
+        (push (list 'CLOSE_SQUARE_BRACKET (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match

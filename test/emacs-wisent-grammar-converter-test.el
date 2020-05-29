@@ -103,7 +103,7 @@
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
-     " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; } }"
+     " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }"
      "")))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 8")
 
@@ -404,6 +404,30 @@
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
   (message "Passed lexer test: assignment with nested function with referenced variable")
+
+  (should (equal
+           (emacs-wisent-grammar-converter--lex-c-string
+            " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }")
+           (list
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "zend_add_class_modifier")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'PARAMETER "$1")
+            (list 'COMMA ",")
+            (list 'PARAMETER "$2")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")
+            (list 'IF "if")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'LOGICAL_NOT "!")
+            (list 'RETURN "$$")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'OPEN_SQUARE_BRACKET "{")
+            (list 'SYMBOL "yyerror")
+            (list 'SEMICOLON ";")
+            (list 'CLOSE_SQUARE_BRACKET "}"))))
+  (message "Passed lexer test: if block checking return value")
 
   )
 
