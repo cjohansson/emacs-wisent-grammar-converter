@@ -448,6 +448,22 @@
             (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'PARAMETER "$2") (list 'SEMICOLON ";") (list 'IF "if") (list 'OPEN_PARENTHESIS "(") (list 'RETURN "$$") (list 'MEMBER_OPERATOR "->") (list 'VARIABLE "kind") (list 'EQUAL "==") (list 'SYMBOL "zend_ast_conditional") (list 'CLOSE_PARENTHESIS ")") (list 'RETURN "$$") (list 'MEMBER_OPERATOR "->") (list 'VARIABLE "attr") (list 'ASSIGNMENT "=") (list 'SYMBOL "zend_parenthesized_conditional") (list 'SEMICOLON ";"))))
   (message "Passed lexer test: if block changing return value attribute")
 
+;;   ;; TODO Lex this:
+;; inline_function:
+;; 		function returns_ref backup_doc_comment '(' parameter_list ')' lexical_vars return_type
+;; 		backup_fn_flags '{' inner_statement_list '}' backup_fn_flags
+;; 			{ $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,
+;; 				  zend_string_init("{closure}", sizeof("{closure}") - 1, 0),
+;; 				  $5, $7, $11, $8); CG(extra_fn_flags) = $9; }
+;; 	|	fn returns_ref '(' parameter_list ')' return_type backup_doc_comment T_DOUBLE_ARROW backup_fn_flags backup_lex_pos expr backup_fn_flags
+;; 			{ $$ = zend_ast_create_decl(ZEND_AST_ARROW_FUNC, $2 | $12, $1, $7,
+;; 				  zend_string_init("{closure}", sizeof("{closure}") - 1, 0), $4, NULL,
+;; 				  zend_ast_create(ZEND_AST_RETURN, $11), $6);
+;; 				  ((zend_ast_decl *) $$)->lex_pos = $10;
+;; 				  CG(extra_fn_flags) = $9; }
+;; ;
+
+
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
