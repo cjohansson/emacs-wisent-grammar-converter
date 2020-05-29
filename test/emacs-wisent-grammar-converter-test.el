@@ -94,18 +94,19 @@
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
+     " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }")
+    "(let ((parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_add_class_modifier parameter-1 parameter-2))(if (not (plist-get 'value return-item)) (setq return-item 'yyerror)) return-item)"))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
+
+  ;; TODO
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
      "			$$ = $2;
 			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
 		"
      "")))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
-
-  (should
-   (equal
-    (emacs-wisent-grammar-converter--reformat-logic-block
-     " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }"
-     "")))
-  (message "Passed Bison-C to Wisent-Emacs Lisp test 8")
 
   )
 
@@ -824,25 +825,25 @@
    (equal
     (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
      (list
-            (list 'RETURN "$$")
-            (list 'ASSIGNMENT "=")
-            (list 'FUNCTION "zend_add_class_modifier")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'PARAMETER "$1")
-            (list 'COMMA ",")
-            (list 'PARAMETER "$2")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'SEMICOLON ";")
-            (list 'IF "if")
-            (list 'OPEN_PARENTHESIS "(")
-            (list 'LOGICAL_NOT "!")
-            (list 'RETURN "$$")
-            (list 'CLOSE_PARENTHESIS ")")
-            (list 'OPEN_SQUARE_BRACKET "{")
-            (list 'SYMBOL "yyerror")
-            (list 'SEMICOLON ";")
-            (list 'CLOSE_SQUARE_BRACKET "}"))
-     "")))
+      (list 'RETURN "$$")
+      (list 'ASSIGNMENT "=")
+      (list 'FUNCTION "zend_add_class_modifier")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'PARAMETER "$1")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$2")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SEMICOLON ";")
+      (list 'IF "if")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'LOGICAL_NOT "!")
+      (list 'RETURN "$$")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'OPEN_SQUARE_BRACKET "{")
+      (list 'SYMBOL "yyerror")
+      (list 'SEMICOLON ";")
+      (list 'CLOSE_SQUARE_BRACKET "}")))
+    "(let ((parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_add_class_modifier parameter-1 parameter-2))(if (not (plist-get 'value return-item)) (setq return-item 'yyerror)) return-item)"))
   (message "Passed test: if statement with logical not")
 
   )

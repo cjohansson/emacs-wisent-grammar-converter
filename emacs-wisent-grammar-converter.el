@@ -898,7 +898,9 @@
         "'%s%s"
         namespace
         token-value))
-      ((or 'PARAMETER 'RETURN)
+      ('RETURN
+       "(plist-get 'value return-item)")
+      ('PARAMETER
        (emacs-wisent-grammar-converter--parameter-to-plist token-value))
       ('NULL
        "nil")
@@ -974,7 +976,8 @@
 (defun emacs-wisent-grammar-converter--if (namespace)
   "Parser for IF statments in NAMESPACE."
   (let ((continue t)
-        (return-string "")
+        (condition-string "")
+        (body-string "")
         (variable "")
         (parenthesis-level 0))
     (while (and
@@ -986,25 +989,25 @@
         (pcase token-id
           ('LOGICAL_NOT
            (setq
-            return-string
+            condition-string
             (concat
-             return-string
+             condition-string
              (emacs-wisent-grammar-converter--logical-prefix
               namespace
               token-id))))
           ((or 'LOGICAL_OR 'LOGICAL_AND 'LOGICAL_EQUAL 'LOGICAL_NOT_EQUAL 'LOGICAL_GREATER 'LOGICAL_LESSER 'LOGICAL_GREATER_OR_EQUAL 'LOGICAL_LESSER_OR_EQUAL)
            (setq
-            return-string
+            condition-string
             (concat
-             return-string
+             condition-string
              (emacs-wisent-grammar-converter--logical-infix
               namespace
               token-id))))
           ((or 'VARIABLE 'RETURN 'SYMBOL 'FUNCTION 'STRING 'INTEGER 'RETURN)
            (setq
-            return-string
+            condition-string
             (concat
-             return-string
+             condition-string
              (emacs-wisent-grammar-converter--token-value
               namespace
               token))))
@@ -1015,10 +1018,92 @@
           ('CLOSE_PARENTHESIS
            (setq
             parenthesis-level
-            (1- parenthesis-level))
-           (when (= parenthesis-level 0)
-             (setq continue nil)))
+            (1- parenthesis-level)))
+          ('OPEN_SQUARE_BRACKET
+           (push
+            token
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+           (setq
+            body-string
+            (emacs-wisent-grammar-converter--if-body namespace))
+           (setq continue nil))
           (_ (signal 'error (list (format "Unexpected if-operator token: %s" token)))))))
+    (format
+     "(if %s %s)"
+     condition-string
+     body-string)))
+
+(defun emacs-wisent-grammar-converter--if-body (namespace)
+  "Parse IF-body in NAMESPACE."
+  (let ((return-string "")
+        (continue t)
+        (square-bracket-level 0))
+    (while (and
+            continue
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('OPEN_SQUARE_BRACKET
+           (setq
+            square-bracket-level
+            (1+ square-bracket-level)))
+          ('CLOSE_SQUARE_BRACKET
+           (setq
+            square-bracket-level
+            (1- square-bracket-level))
+           (when (= square-bracket-level 0)
+             (setq continue nil)))
+          ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION))
+          ('POINTER
+           (unless (string= token-value "")
+             (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--variable token-value namespace)))))
+          ('FUNCTION
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--function token-value namespace))))
+          ('IF
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--if namespace))))
+          ('SYMBOL
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              "(setq return-item '%s%s)"
+              namespace
+              token-value))))
+          ('VARIABLE
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--variable token-value namespace))))
+          ('PARAMETER
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--parameter token-value namespace))))
+          ('RETURN
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--return namespace))))
+          ('SEMICOLON)
+          (_ (signal 'error (list (format "Unexpected if-body token %s" token)))))))
     return-string))
 
 (defun emacs-wisent-grammar-converter--logical-prefix (namespace operator)
