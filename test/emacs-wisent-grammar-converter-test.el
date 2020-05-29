@@ -98,15 +98,24 @@
     "(let ((parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_add_class_modifier parameter-1 parameter-2))(if (not (plist-get 'value return-item)) (setq return-item 'yyerror)) return-item)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
 
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     "			$$ = $2;
+			if ($$->kind == ZEND_AST_CONDITIONAL) { $$->attr = ZEND_PARENTHESIZED_CONDITIONAL; }
+		")
+    "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(if (equal (plist-get return-item 'kind) 'zend_ast_conditional) (plist-put return-string 'attr 'zend_parenthesized_conditional)) return-item)"))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 8")
+
   ;; TODO
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "			$$ = $2;
 			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
-		"
-     "")))
-  (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
+		")
+    "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(if (equal (plist-get return-item 'kind) 'zend_ast_conditional) (plist-put return-string 'attr 'zend_parenthesized_conditional)) return-item)"))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 9")
 
   )
 
@@ -856,6 +865,8 @@
   (message "Passed test: if statement with logical not")
 
   )
+
+;; (setq debug-on-error t)
 
 (emacs-wisent-grammar-converter-test--lex-c-string)
 (emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp)

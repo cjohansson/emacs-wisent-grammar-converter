@@ -977,6 +977,7 @@
   "Parser for IF statments in NAMESPACE."
   (let ((continue t)
         (condition-string "")
+        (condition-subject-string "")
         (body-string "")
         (variable "")
         (parenthesis-level 0))
@@ -1001,6 +1002,7 @@
             (concat
              condition-string
              (emacs-wisent-grammar-converter--logical-infix
+              condition-subject-string
               namespace
               token-id))))
           ((or 'PARAMETER 'RETURN)
@@ -1021,28 +1023,22 @@
                         name
                         (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
                      (setq
-                      condition-string
-                      (concat
-                       condition-string
+                      condition-subject-string
                        (format
                         "(plist-get %s '%s)"
                         name
-                        (car (cdr attribute)))))))
+                        (car (cdr attribute))))))
                (setq
-                condition-string
-                (concat
-                 condition-string
+                condition-subject-string
                  (emacs-wisent-grammar-converter--token-value
                   namespace
-                  token))))))
+                  token)))))
           ((or 'VARIABLE 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
            (setq
-            condition-string
-            (concat
-             condition-string
+            condition-subject-string
              (emacs-wisent-grammar-converter--token-value
               namespace
-              token))))
+              token)))
           ('OPEN_PARENTHESIS
            (setq
             parenthesis-level
@@ -1137,6 +1133,39 @@
           ('SEMICOLON)
           (_ (signal 'error (list (format "Unexpected if-body token %s" token)))))))
     return-string))
+
+(defun emacs-wisent-grammar-converter--logical-infix (subject-string namespace operator)
+  "Parse logical infix between SUBJECT with infix in NAMESPACE"
+  (let ((continue t)
+        (return-string "")
+        (variable "")
+        (parenthesis-level 0)
+        (operator-string ""))
+    (pcase operator
+      ('EQUAL (setq operator-string "equal"))
+      ('LOGICAL_OR (setq operator-string "or"))
+      ('LOGICAL_AND (setq operator-string "and"))
+      (_ (signal 'error (list (format "Unexpected logical infix operator %s" operator)))))
+    (while (and
+            continue
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ((or 'PARAMETER 'VARIABLE 'RETURN 'INTEGER 'STRING 'SYMBOL)
+           (setq
+            subject2-string
+            (emacs-wisent-grammar-converter--token-value
+             namespace
+             token))
+           (setq continue nil))
+          (_ (signal 'error (list (format "Unexpected logical infix  token %s" token)))))))
+    (format
+     "(%s %s %s)"
+     operator-string
+     subject-string
+     subject2-string)))
 
 (defun emacs-wisent-grammar-converter--logical-prefix (namespace operator)
   "Parse logical prefix expression OPERATOR in NAMESPACE."
