@@ -820,6 +820,31 @@
     "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval zv)) return-item)"))
   (message "Passed test: function call with referenced variable")
 
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+     (list
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "zend_add_class_modifier")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'PARAMETER "$1")
+            (list 'COMMA ",")
+            (list 'PARAMETER "$2")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'SEMICOLON ";")
+            (list 'IF "if")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'LOGICAL_NOT "!")
+            (list 'RETURN "$$")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'OPEN_SQUARE_BRACKET "{")
+            (list 'SYMBOL "yyerror")
+            (list 'SEMICOLON ";")
+            (list 'CLOSE_SQUARE_BRACKET "}"))
+     "")))
+  (message "Passed test: if statement with logical not")
+
   )
 
 (emacs-wisent-grammar-converter-test--lex-c-string)

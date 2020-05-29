@@ -486,6 +486,12 @@
               (concat
                return-string
                (emacs-wisent-grammar-converter--function token-value namespace))))
+            ('IF
+             (setq
+              return-string
+              (concat
+               return-string
+               (emacs-wisent-grammar-converter--if namespace))))
             ('SYMBOL
              (setq
               return-string
@@ -892,13 +898,13 @@
         "'%s%s"
         namespace
         token-value))
-      ('PARAMETER
+      ((or 'PARAMETER 'RETURN)
        (emacs-wisent-grammar-converter--parameter-to-plist token-value))
       ('NULL
        "nil")
       ('FUNCTION
        (emacs-wisent-grammar-converter--function token-value namespace))
-      (_ (signal 'error (list (format "Unexpected token value token: %s" token)))))))
+      (_ (signal 'error (list (format "Unexpected token value token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
 
 ;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
 (defun emacs-wisent-grammar-converter--member-operator (parent namespace)
@@ -963,6 +969,84 @@
            (setq continue nil)
            (push token emacs-wisent-grammar-converter--lexer-tokens-stack))
           (_ (signal 'error (list (format "Unexpected member-operator token: %s" token)))))))
+    return-string))
+
+(defun emacs-wisent-grammar-converter--if (namespace)
+  "Parser for IF statments in NAMESPACE."
+  (let ((continue t)
+        (return-string "")
+        (variable "")
+        (parenthesis-level 0))
+    (while (and
+            continue
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ('LOGICAL_NOT
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--logical-prefix
+              namespace
+              token-id))))
+          ((or 'LOGICAL_OR 'LOGICAL_AND 'LOGICAL_EQUAL 'LOGICAL_NOT_EQUAL 'LOGICAL_GREATER 'LOGICAL_LESSER 'LOGICAL_GREATER_OR_EQUAL 'LOGICAL_LESSER_OR_EQUAL)
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--logical-infix
+              namespace
+              token-id))))
+          ((or 'VARIABLE 'RETURN 'SYMBOL 'FUNCTION 'STRING 'INTEGER 'RETURN)
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter--token-value
+              namespace
+              token))))
+          ('OPEN_PARENTHESIS
+           (setq
+            parenthesis-level
+            (1+ parenthesis-level)))
+          ('CLOSE_PARENTHESIS
+           (setq
+            parenthesis-level
+            (1- parenthesis-level))
+           (when (= parenthesis-level 0)
+             (setq continue nil)))
+          (_ (signal 'error (list (format "Unexpected if-operator token: %s" token)))))))
+    return-string))
+
+(defun emacs-wisent-grammar-converter--logical-prefix (namespace operator)
+  "Parse logical prefix expression OPERATOR in NAMESPACE."
+  (let ((continue t)
+        (return-string "")
+        (variable "")
+        (parenthesis-level 0))
+    (while (and
+            continue
+            emacs-wisent-grammar-converter--lexer-tokens-stack)
+      (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        (pcase token-id
+          ((or 'VARIABLE RETURN SYMBOL FUNCTION STRING INTEGER RETURN)
+           (setq continue nil)
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              "(not %s)"
+              (emacs-wisent-grammar-converter--token-value
+               namespace
+               token)))))
+          ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS))
+          (_ (signal 'error (list (format "Unexpected logical prefix token: %s" token)))))))
     return-string))
 
 
