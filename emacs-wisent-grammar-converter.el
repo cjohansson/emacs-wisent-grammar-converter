@@ -1434,9 +1434,16 @@
           ("logic"
 
            ;; Can we find a { or } character?
-           (if (search-forward-regexp "\\({\\|}\\)" nil t)
-
+           (if (search-forward-regexp "\\({\\|}\\|'\\|\"\\)" nil t)
                (cond
+
+                ((string= (match-string 1) "'")
+                 (unless (search-forward-regexp "'" nil t)
+                   (signal 'error (list (format "Found no ending of single quote around %s" (point))))))
+
+                ((string= (match-string 1) "\"")
+                 (unless (search-forward-regexp "'" nil t)
+                   (signal 'error (list (format "Found no ending of double quote around %s" (point))))))
 
                 ((string= (match-string 1) "}")
                  (setq logic-end (point))

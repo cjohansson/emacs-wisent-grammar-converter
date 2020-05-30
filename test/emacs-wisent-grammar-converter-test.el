@@ -462,8 +462,6 @@
 ;; 				  ((zend_ast_decl *) $$)->lex_pos = $10;
 ;; 				  CG(extra_fn_flags) = $9; }
 ;; ;
-
-
   )
 
 (defun emacs-wisent-grammar-converter-test--converted-lexer-tokens-to-lisp ()
