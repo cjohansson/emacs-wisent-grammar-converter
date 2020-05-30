@@ -501,6 +501,14 @@
                 "(setq return-item '%s%s)"
                 namespace
                 token-value))))
+            ('DOC_COMMENT
+             (setq
+              return-string
+              (concat
+               return-string
+               (format
+                ";; %s\n"
+                token-value))))
             ('VARIABLE
              (setq
               return-string
