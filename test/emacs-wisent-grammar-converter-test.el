@@ -117,6 +117,9 @@
     "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(if (equal (plist-get return-item 'kind) 'zend_ast_conditional) (plist-put return-string 'attr 'zend_parenthesized_conditional)) return-item)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 9")
 
+  ;; TODO Lex and parse this:
+  ;; $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,\nzend_string_init(\"{closure}\", sizeof(\"{closure}\") - 1, 0),\n$5, $7, $11, $8); CG(extra_fn_flags) = $9;
+
   )
 
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()

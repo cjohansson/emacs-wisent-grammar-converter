@@ -1297,7 +1297,7 @@
 
     ;; Remove unnecessary starting and ending stuff
     (let ((start (point))
-          (level "root")
+          (level "start")
           (continue t)
           (grammar "")
           (block "")
@@ -1314,18 +1314,32 @@
       (while continue
         (pcase level
 
+          ("start"
+           (if (search-forward-regexp "\n+%%" nil t)
+               (progn
+                 (message "Found start at '%s'" (point))
+                 (setq level "root"))
+             (setq continue nil)
+             (message "Found no start of grammar")))
+
           ("root"
 
            ;; Can we find something like    abc_def:
-           (if (search-forward-regexp "\n+\\([a-z_]+\\)[\n\t ]*:" nil t)
+           (if (search-forward-regexp "\n+\\(\\([a-z_]+\\)[\n\t ]*:\\|%%\n+\\)" nil t)
 
                (progn
-                 (setq grammar (concat grammar (format "\n%s:\n    " (match-string 1))))
-                 (setq block (match-string 1))
-                 (setq rule "")
-                 (setq rule-token-count 0)
-                 (message "Found block '%s'" block)
-                 (setq level "block"))
+                 (let ((matches-block (string-match-p "\n+[a-z_]+[\n\t ]*:" (match-string 0)))
+                       (matches-end (string-match-p "\n+%%\n+" (match-string 0))))
+                   (if matches-block
+                       (progn
+                         (setq grammar (concat grammar (format "\n%s:\n    " (match-string 1))))
+                         (setq block (match-string 1))
+                         (setq rule "")
+                         (setq rule-token-count 0)
+                         (message "Found block '%s' at '%s'" block (point))
+                         (setq level "block"))
+                     (message "Found end of rules at '%s', match-string '%s'" (point) (match-string 0))
+                     (setq continue nil))))
 
              (progn
                (message "Failed to find block-start")
@@ -1353,13 +1367,13 @@
                    (when matches-delimiter
                      (setq rule-token-count 0)
                      (setq grammar (concat grammar "\n    | "))
-                     (message "Found another rule in block"))
+                     (message "Found another rule in block at '%s'" (point)))
 
                    ;; Is it the end of a block?
                    (when matches-end
                      (setq grammar (concat grammar "\n    ;\n"))
                      (setq rule-token-count 0)
-                     (message "Ended block")
+                     (message "Ended block at '%s'" (point))
                      (setq level "root"))))
 
                 ;; Is it a logic start delimiter?
@@ -1370,6 +1384,7 @@
                  (setq rule (concat rule "("))
                  (setq last-was-block-comment nil)
                  (setq logic-start (point))
+                 (message "Found logic start at '%s'" (point))
                  (setq level "logic"))
 
                 ;; Is it a single-quote?
@@ -1446,11 +1461,15 @@
                (cond
 
                 ((string= (match-string 1) "'")
-                 (unless (search-forward-regexp "'" nil t)
+                 (message "Found starting single quote at '%s'" (point))
+                 (if (search-forward-regexp "'" nil t)
+                     (message "Found ending single quote at '%s'" (point))
                    (signal 'error (list (format "Found no ending of single quote around %s" (point))))))
 
                 ((string= (match-string 1) "\"")
-                 (unless (search-forward-regexp "'" nil t)
+                 (message "Found starting double quote at '%s'" (point))
+                 (if (search-forward-regexp "\"" nil t)
+                     (message "Found ending double quote at '%s'" (point))
                    (signal 'error (list (format "Found no ending of double quote around %s" (point))))))
 
                 ((string= (match-string 1) "}")
@@ -1466,6 +1485,7 @@
                    (if previous
                        (setq logic-start (point))
                      (progn
+                       (message "Ending logic at '%s'" (point))
                        (setq level "block")))))
 
                 ;; Is it the start of nested logic?
