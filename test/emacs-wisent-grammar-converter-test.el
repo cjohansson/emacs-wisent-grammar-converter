@@ -117,9 +117,6 @@
     "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(if (equal (plist-get return-item 'kind) 'zend_ast_conditional) (plist-put return-string 'attr 'zend_parenthesized_conditional)) return-item)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 9")
 
-  ;; TODO Lex and parse this:
-  ;; $$ = zend_ast_create_decl(ZEND_AST_CLOSURE, $2 | $13, $1, $3,\nzend_string_init(\"{closure}\", sizeof(\"{closure}\") - 1, 0),\n$5, $7, $11, $8); CG(extra_fn_flags) = $9;
-
   )
 
 (defun emacs-wisent-grammar-converter-test--lex-c-string ()
@@ -882,6 +879,57 @@
     "(let ((parameter-1 '(value $1))(return-item '(value $$)));; allow single trailing comma
 (plist-put return-item 'value (zend_ast_list_rtrim parameter-1)) return-item)"))
   (message "Passed test: code starting with doc comment")
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
+     (list
+      (list 'RETURN "$$")
+      (list 'ASSIGNMENT "=")
+      (list 'FUNCTION "zend_ast_create_decl")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'SYMBOL "zend_ast_closure")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$2")
+      (list 'BITWISE_OR "|")
+      (list 'PARAMETER "$13")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$1")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$3")
+      (list 'COMMA ",")
+      (list 'FUNCTION "zend_string_init")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'STRING "{closure}")
+      (list 'COMMA ",")
+      (list 'FUNCTION "sizeof")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'STRING "{closure}")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SUBTRACTION "-")
+      (list 'INTEGER "1")
+      (list 'COMMA ",")
+      (list 'INTEGER "0")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$5")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$7")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$11")
+      (list 'COMMA ",")
+      (list 'PARAMETER "$8")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'SEMICOLON ";")
+      (list 'FUNCTION "cg")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'VARIABLE "extra_fn_flags")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'ASSIGNMENT "=")
+      (list 'PARAMETER "$9")
+      (list 'SEMICOLON ";")))
+    nil))
+  (message "Passed test: subtraction of function return in function arguments")
 
   )
 
