@@ -755,64 +755,54 @@
       (let* ((token (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
              (token-id (car token))
              (token-value (car (cdr token))))
+        ;; (message "Function arguments token: %s" token)
         (pcase token-id
           ('COMMA)
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level)))
           ((or 'VARIABLE 'FUNCTION 'PARAMETER 'SYMBOL 'NULL 'REFERENCE)
-           (let ((parsed-token-value (emacs-wisent-grammar-converter--token-value namespace token)))
-             (let ((next-is-bitwise-or
-                    (and
-                     emacs-wisent-grammar-converter--lexer-tokens-stack
-                     (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_OR)))
-                   (next-is-ternary
-                    (and
-                     emacs-wisent-grammar-converter--lexer-tokens-stack
-                     (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'QUESTION_MARK)))
-                   (next-is-bitwise-and
-                    (and
-                     emacs-wisent-grammar-converter--lexer-tokens-stack
-                     (equal (car (car emacs-wisent-grammar-converter--lexer-tokens-stack)) 'BITWISE_AND))))
-               (when (> return-count 0)
-                 (setq return-string (concat return-string " ")))
-               (cond
-                (next-is-ternary
-                 (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-                 (let ((ternary-true (emacs-wisent-grammar-converter--token-value namespace))
-                       (ternary-false ""))
-                   ;; Pop the :
-                   (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
-                   (setq ternary-false (emacs-wisent-grammar-converter--token-value namespace))
-
-                   (setq
-                    return-string
-                    (concat
-                     return-string
-                     (format
-                      "(if %s %s %s)"
-                      parsed-token-value
-                      ternary-true
-                      ternary-false)))))
-                ((or next-is-bitwise-or
-                     next-is-bitwise-and)
-                 (setq
-                  return-string
-                  (concat
-                   return-string
-                   (emacs-wisent-grammar-converter--bitwise-token-value namespace token))))
-                (t
-                 (setq
-                  return-string
-                  (concat
-                   return-string
-                   parsed-token-value))))
-               (setq return-count (1+ return-count)))))
+           (let ((parsed-value (emacs-wisent-grammar-converter--token-value namespace token)))
+           (when (> return-count 0)
+             (setq
+              return-string
+              (concat
+               return-string
+               " ")))
+           ;; (message "Parsed token '%s' value '%s'" token parsed-value)
+           (setq
+            return-string
+            (concat
+             return-string
+             parsed-value))
+           (setq return-count (1+ return-count))))
           ('STRING
-           (format
-            "\"%s\""
-            token-value))
+           (when (> return-count 0)
+             (setq
+              return-string
+              (concat
+               return-string
+               " ")))
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              "\"%s\""
+              token-value)))
+           (setq return-count (1+ return-count)))
           ('INTEGER
-           token-value)
+           (when (> return-count 0)
+             (setq
+              return-string
+              (concat
+               return-string
+               " ")))
+           (setq
+            return-string
+            (concat
+             return-string
+             token-value))
+           (setq return-count (1+ return-count)))
           ('CLOSE_PARENTHESIS
            (setq bracket-level (1- bracket-level))
            (when (= bracket-level 0)
@@ -823,10 +813,12 @@
           (_ (signal 'error (list (format "Unexpected function arguments token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter--bitwise-token-value (namespace first-token)
-  "Return bitwise value of first-token in NAMESPACE."
+(defun emacs-wisent-grammar-converter--infix-token-value (namespace first-token-value)
+  "Return infix value of first-token-value in NAMESPACE."
   (let ((return-string "")
         (continue t)
+        (in-subtraction nil)
+        (in-addition nil)
         (in-bitwise-or nil)
         (in-bitwise-and nil))
     (while (and continue
@@ -835,6 +827,26 @@
              (token-id (car token))
              (token-value (car (cdr token))))
         (pcase token-id
+          ('ADDITION
+           (when in-subtraction
+             (signal 'error (list (format "Cannot combine subctractionwith addition in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (unless in-subtraction
+             (setq in-subtraction t)
+             (setq
+              return-string
+              (concat
+               "(- "
+               first-token-value))))
+          ('SUBTRACTION
+           (when in-subtraction
+             (signal 'error (list (format "Cannot combine subctractionwith addition in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (unless in-subtraction
+             (setq in-subtraction t)
+             (setq
+              return-string
+              (concat
+               "(- "
+               first-token-value))))
           ('BITWISE_OR
            (when in-bitwise-and
              (signal 'error (list (format "Cannot combined bitwise OR with AND in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
@@ -844,7 +856,7 @@
               return-string
               (concat
                "(logior "
-               (emacs-wisent-grammar-converter--token-value namespace first-token)))))
+               first-token-value))))
           ('BITWISE_AND
            (when in-bitwise-or
              (signal 'error (list (format "Cannot combined bitwise OR with AND in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
@@ -854,18 +866,23 @@
               return-string
               (concat
                "(logand "
-               (emacs-wisent-grammar-converter--token-value namespace first-token)))))
+               first-token-value))))
           ((or 'VARIABLE 'PARAMETER 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
-           (unless (or in-bitwise-or in-bitwise-and)
-             (signal 'error (list (format "Unexpected bitwise token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (unless (or in-bitwise-or in-bitwise-and in-subtraction in-addition)
+             (signal 'error (list (format "Unexpected infix token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
            (let ((parsed-token-value (emacs-wisent-grammar-converter--token-value namespace token)))
-             (setq return-string (concat return-string " " parsed-token-value))))
+             (setq
+              return-string
+              (concat
+               return-string
+               " "
+               parsed-token-value))))
           ((or 'SEMICOLON 'CLOSE_PARENTHESIS 'COMMA)
-           (unless (or in-bitwise-or in-bitwise-and)
-             (signal 'error (list (format "Unexpected bitwise token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
+           (unless (or in-bitwise-or in-bitwise-and in-subtraction in-addition)
+             (signal 'error (list (format "Unexpected infix token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))
            (push token emacs-wisent-grammar-converter--lexer-tokens-stack)
            (setq continue nil))
-          (_ (signal 'error (list (format "Unexpected bitwise token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
+          (_ (signal 'error (list (format "Unexpected infix token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
     (setq
      return-string
      (concat return-string ")"))
@@ -873,48 +890,97 @@
 
 (defun emacs-wisent-grammar-converter--token-value (namespace &optional token)
   "Return TOKEN value."
-  (unless token
-    (setq
-     token
-     (pop emacs-wisent-grammar-converter--lexer-tokens-stack)))
-  (let* ((token-id (car token))
-         (token-value (car (cdr token))))
-    (pcase token-id
-      ('REFERENCE
-       (pcase emacs-wisent-grammar-converter--lex-root-token-id
-         ('RETURN
-          token-value)
-         ('FUNCTION
+  (let ((return-string ""))
+    (unless token
+      (setq
+       token
+       (pop emacs-wisent-grammar-converter--lexer-tokens-stack)))
+    (let* ((token-id (car token))
+           (token-value (car (cdr token))))
+      (pcase token-id
+        ('REFERENCE
+         (pcase emacs-wisent-grammar-converter--lex-root-token-id
+           ('RETURN
+            (setq
+             return-string
+             token-value))
+           ('FUNCTION
+            (setq
+             return-string
+             (format
+              "(lambda(return) (setq %s return))"
+              token-value)))
+           (_ (signal 'error (list (format "Unexpected reference root token id: %s, remaining tokens: %s" emacs-wisent-grammar-converter--lex-root-token-id emacs-wisent-grammar-converter--lexer-tokens-stack))))))
+        ('VARIABLE
+         (setq
+          return-string
           (format
-           "(lambda(return) (setq %s return))"
-           token-value))
-         (_ (signal 'error (list (format "Unexpected reference root token id: %s, remaining tokens: %s" emacs-wisent-grammar-converter--lex-root-token-id emacs-wisent-grammar-converter--lexer-tokens-stack))))))
-      ('VARIABLE
-       (format
-        "%s%s"
-        namespace
-        token-value))
-      ('STRING
-       (format
-        "\"%s\""
-        token-value))
-      ('INTEGER
-        namespace
-        token-value)
-      ('SYMBOL
-       (format
-        "'%s%s"
-        namespace
-        token-value))
-      ('RETURN
-       "(plist-get 'value return-item)")
-      ('PARAMETER
-       (emacs-wisent-grammar-converter--parameter-to-plist token-value))
-      ('NULL
-       "nil")
-      ('FUNCTION
-       (emacs-wisent-grammar-converter--function token-value namespace))
-      (_ (signal 'error (list (format "Unexpected token value token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
+           "%s%s"
+           namespace
+           token-value)))
+        ('STRING
+         (setq
+          return-string
+          (format
+           "\"%s\""
+           token-value)))
+        ('INTEGER
+         (setq
+          return-string
+          token-value))
+        ('SYMBOL
+         (setq
+          return-string
+          (format
+           "'%s%s"
+           namespace
+           token-value)))
+        ('RETURN
+         (setq
+          return-string
+          "(plist-get 'value return-item)"))
+        ('PARAMETER
+         (setq
+          return-string
+          (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
+        ('NULL
+         (setq
+          return-string
+          "nil"))
+        ('FUNCTION
+         (setq
+          return-string
+          (emacs-wisent-grammar-converter--function token-value namespace)))
+        (_ (signal 'error (list (format "Unexpected token value token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack))))))
+
+    ;; Check next token here
+    (when emacs-wisent-grammar-converter--lexer-tokens-stack
+      (let* ((next-token (car emacs-wisent-grammar-converter--lexer-tokens-stack))
+             (next-token-id (car next-token))
+             (next-token-value (car (cdr next-token))))
+        (pcase next-token-id
+          ((or 'BITWISE_OR 'BITWISE_AND 'ADDITION 'MULTIPLICATION 'SUBTRACTION 'DIVISION)
+           (let ((infix-value (emacs-wisent-grammar-converter--infix-token-value namespace return-string)))
+             ;; (message "Infix value of token '%s' is '%s'" token infix-value)
+             (setq
+              return-string
+              infix-value)))
+          ('QUESTION_MARK
+           (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+           (let ((ternary-true (emacs-wisent-grammar-converter--token-value namespace))
+                 (ternary-false ""))
+
+             ;; Pop the :
+             (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
+             (setq ternary-false (emacs-wisent-grammar-converter--token-value namespace))
+             (setq
+              return-string
+              (format
+               "(if %s %s %s)"
+               return-string
+               ternary-true
+               ternary-false)))))))
+    return-string))
 
 ;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
 (defun emacs-wisent-grammar-converter--member-operator (parent namespace)

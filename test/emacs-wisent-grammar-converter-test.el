@@ -79,7 +79,7 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = NULL; zend_throw_exception(zend_ce_compile_error,
 			      \"__HALT_COMPILER() can only be used from the outermost scope\", 0); YYERROR; ")
-    "(let ((return-item '(value $$)))(plist-put return-item 'value nil)(zend_throw_exception zend_ce_compile_error)(setq return-item 'yyerror) return-item)"
+    "(let ((return-item '(value $$)))(plist-put return-item 'value nil)(zend_throw_exception zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0)(setq return-item 'yyerror) return-item)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 5")
 
@@ -88,7 +88,7 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_ast_create_decl(ZEND_AST_METHOD, $3 | $1 | $12, $2, $5,
 				  zend_ast_get_str($4), $7, NULL, $11, $9); CG(extra_fn_flags) = $10; ")
-    "(let ((parameter-10 '(value $10))(parameter-9 '(value $9))(parameter-11 '(value $11))(parameter-7 '(value $7))(parameter-4 '(value $4))(parameter-5 '(value $5))(parameter-2 '(value $2))(parameter-12 '(value $12))(parameter-1 '(value $1))(parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_method (logior parameter-3 parameter-1 parameter-12) parameter-2 parameter-5 (zend_ast_get_str parameter-4) parameter-7 nil parameter-11 parameter-9))(cg 'extra_fn_flags parameter-10) return-item)"))
+    "(let ((parameter-10 '(value $10))(parameter-9 '(value $9))(parameter-11 '(value $11))(parameter-7 '(value $7))(parameter-4 '(value $4))(parameter-5 '(value $5))(parameter-2 '(value $2))(parameter-12 '(value $12))(parameter-1 '(value $1))(parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_method (logior parameter-3 (logior parameter-1 parameter-12)) parameter-2 parameter-5 (zend_ast_get_str parameter-4) parameter-7 nil parameter-11 parameter-9))(cg 'extra_fn_flags parameter-10) return-item)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 6")
 
   (should
@@ -880,6 +880,7 @@
 (plist-put return-item 'value (zend_ast_list_rtrim parameter-1)) return-item)"))
   (message "Passed test: code starting with doc comment")
 
+  ;; TODO
   (should
    (equal
     (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
@@ -928,7 +929,7 @@
       (list 'ASSIGNMENT "=")
       (list 'PARAMETER "$9")
       (list 'SEMICOLON ";")))
-    nil))
+    "(let ((parameter-9 '(value $9))(parameter-8 '(value $8))(parameter-11 '(value $11))(parameter-7 '(value $7))(parameter-5 '(value $5))(parameter-3 '(value $3))(parameter-1 '(value $1))(parameter-13 '(value $13))(parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_closure (logior parameter-2 parameter-13) parameter-1 parameter-3 (zend_string_init \"{closure}\" (- (sizeof \"{closure}\") 1) 0) parameter-5 parameter-7 parameter-11 parameter-8))(cg 'extra_fn_flags parameter-9) return-item)"))
   (message "Passed test: subtraction of function return in function arguments")
 
   )
