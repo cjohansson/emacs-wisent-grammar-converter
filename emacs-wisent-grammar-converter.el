@@ -1398,7 +1398,7 @@
                        (matches-end (string-match-p "\n+%%\n+" (match-string 0))))
                    (if matches-block
                        (progn
-                         (setq grammar (concat grammar (format "\n%s:\n    " (match-string 1))))
+                         (setq grammar (concat grammar (format "\n%s\n    " (match-string 1))))
                          (setq block (match-string 1))
                          (setq rule "")
                          (setq rule-token-count 0)
@@ -1542,7 +1542,7 @@
                  (setq logic-end (point))
                  (setq logic (emacs-wisent-grammar-converter--string-trim (buffer-substring logic-start (- logic-end 1))))
 
-                 (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic))
+                 (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic prefix))
                  
                  (setq rule (concat rule logic ")"))
 
