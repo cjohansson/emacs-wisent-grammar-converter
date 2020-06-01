@@ -1447,7 +1447,7 @@
                  (if (and (> rule-token-count 0) (not last-was-block-comment))
                      (setq rule (concat rule " "))
                    (setq rule (concat rule "\n    ")))
-                 (setq rule (concat rule "("))
+                 (setq rule (concat rule "(progn "))
                  (setq last-was-block-comment nil)
                  (setq logic-start (point))
                  (message "Found logic start at '%s'" (point))
