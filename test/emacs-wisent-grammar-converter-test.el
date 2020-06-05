@@ -24,6 +24,11 @@
 
 ;; Run from terminal with `make test'
 
+
+;; TODO Generate more compatible code
+;;;;TODO 1. Don't initialize all parameters and return-item as property-lists
+;;;;TODO 2. Use (semantic-tag-put-attribute $3 'attr value) and (semantic-tag-get-attribute $3 'attr) for attributes
+;;;;TODO 3. Replace all terminals in rules with symbols that can be user-defined
 ;; TODO Refactor code into separate files
 
 
@@ -41,7 +46,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "$$ = zend_ast_append_str($1, $3);")
-    "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_append_str parameter-1 parameter-3)) return-item)"
+    "(let ((r)) (setq r (ZEND_AST_APPEND_STR $1 $3)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 1")
 
@@ -51,7 +56,7 @@
      "$$ = zend_ast_create(ZEND_AST_HALT_COMPILER,
 			      zend_ast_create_zval_from_long(zend_get_scanned_file_offset()));
 			  zend_stop_lexing();")
-    "(let ((return-item '(value $$)))(plist-put return-item 'value (zend_ast_create 'zend_ast_halt_compiler (zend_ast_create_zval_from_long (zend_get_scanned_file_offset))))(zend_stop_lexing) return-item)"
+    "(let ((r)) (setq r (ZEND_AST_CREATE 'zend_ast_halt_compiler (ZEND_AST_CREATE_ZVAL_FROM_LONG (ZEND_GET_SCANNED_FILE_OFFSET)))) (zend_stop_lexing) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 2")
 
@@ -62,7 +67,7 @@
 			zend_lex_tstring(&zv);
 			$$ = zend_ast_create_zval(&zv);
 ")
-    "(let ((return-item '(value $$))(zv nil))(zend_lex_tstring (lambda(return) (setq zv return)))(plist-put return-item 'value (zend_ast_create_zval zv)) return-item)"
+    "(let ((r)(zv)) (ZEND_LEX_TSTRING (lambda(return) (setq zv return)))(setq r (ZEND_AST_CREATE_ZVAL zv)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 3")
 
@@ -70,7 +75,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_ast_list_add($1, $3); ")
-    "(let ((parameter-3 '(value $3))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_list_add parameter-1 parameter-3)) return-item)"
+    "(let ((r)) (setq r (ZEND_AST_LIST_ADD $1 $3)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 4")
 
@@ -79,7 +84,7 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = NULL; zend_throw_exception(zend_ce_compile_error,
 			      \"__HALT_COMPILER() can only be used from the outermost scope\", 0); YYERROR; ")
-    "(let ((return-item '(value $$)))(plist-put return-item 'value nil)(zend_throw_exception zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0)(setq return-item 'yyerror) return-item)"
+    "(let ((r)) (setq r nil)(ZEND_THROW_EXCEPTION zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0) (setq r 'yerror) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 5")
 
@@ -88,14 +93,14 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_ast_create_decl(ZEND_AST_METHOD, $3 | $1 | $12, $2, $5,
 				  zend_ast_get_str($4), $7, NULL, $11, $9); CG(extra_fn_flags) = $10; ")
-    "(let ((parameter-10 '(value $10))(parameter-9 '(value $9))(parameter-11 '(value $11))(parameter-7 '(value $7))(parameter-4 '(value $4))(parameter-5 '(value $5))(parameter-2 '(value $2))(parameter-12 '(value $12))(parameter-1 '(value $1))(parameter-3 '(value $3))(return-item '(value $$)))(plist-put return-item 'value (zend_ast_create_decl 'zend_ast_method (logior parameter-3 (logior parameter-1 parameter-12)) parameter-2 parameter-5 (zend_ast_get_str parameter-4) parameter-7 nil parameter-11 parameter-9))(cg 'extra_fn_flags parameter-10) return-item)"))
+    "(let ((r))(setq r (ZEND_AST_CREATE_DECL 'zend_ast_method (logior $3 (logior $1 $12)) $2 $5 (ZEND_AST_GET_STR $4) $7 nil $11 $9))(CG 'extra_fn_flags $10) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 6")
 
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }")
-    "(let ((parameter-2 '(value $2))(parameter-1 '(value $1))(return-item '(value $$)))(plist-put return-item 'value (zend_add_class_modifier parameter-1 parameter-2))(if (not (plist-get 'value return-item)) (setq return-item 'yyerror)) return-item)"))
+    "(let ((r))(setq r (ZEND_ADD_CLASS_MODIFIER $1 $2))(if (not r) (setq r 'yyerror)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
 
   (should
@@ -104,17 +109,16 @@
      "			$$ = $2;
 			if ($$->kind == ZEND_AST_CONDITIONAL) { $$->attr = ZEND_PARENTHESIZED_CONDITIONAL; }
 		")
-    "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(if (equal (plist-get return-item 'kind) 'zend_ast_conditional) (plist-put return-string 'attr 'zend_parenthesized_conditional)) return-item)"))
+    "(let ((r)) (setq r $2) (if (equal (semantic-tag-get-attribute r 'kind) 'zend_ast_conditional) (semantic-tag-put-attribute r 'attr 'zend_parenthesized_conditional)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 8")
 
-  ;; TODO
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "			$$ = $2;
 			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
 		")
-    "(let ((parameter-2 '(value $2))(return-item '(value $$)))(plist-put return-item 'value parameter-2)(if (equal (plist-get return-item 'kind) 'zend_ast_conditional) (plist-put return-string 'attr 'zend_parenthesized_conditional)) return-item)"))
+    "(let ((r)) (setq r $2)(if (equal (semantic-tag-get-attribute r 'kind) 'zend_ast_conditional) (semantic-tag-put-attribute r 'attr 'zend_parenthesized_conditional)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 9")
 
   )
