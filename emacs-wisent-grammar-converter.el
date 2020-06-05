@@ -388,15 +388,6 @@
 (defvar emacs-wisent-grammar-converter--lex-root-token-id nil
   "Current root token id.")
 
-(defun emacs-wisent-grammar-converter--parameter-to-plist (parameter)
-  "Convert PARAMETER to corresponding property-list variable."
-  (format
-   "parameter-%s"
-   (replace-regexp-in-string
-    "\\$"
-    ""
-    parameter)))
-
 (defun emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp (tokens &optional namespace)
   "Convert Bison grammar TOKENS into emacs-lisp using parser for each statement."
   (setq emacs-wisent-grammar-converter--lexer-tokens-stack tokens)
@@ -551,7 +542,7 @@
         "(semantic-tag-put-attribute %s %s)"
         name
         (emacs-wisent-grammar-converter--member-operator
-         (emacs-wisent-grammar-converter--parameter-to-plist name)
+         name
          namespace)))
       (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
 
@@ -570,21 +561,21 @@
            (setq
             return-string
             (format
-             "(plist-put return-item 'value %s)"
+             "(setq r %s)"
              (emacs-wisent-grammar-converter--token-value namespace)))
            (setq continue nil))
           ('BITWISE_OR_ASSIGNMENT
            (setq
             return-string
             (format
-             "(plist-put return-item 'value (logior (plist-get return-item 'value) %s))"
+             "(setq r (logior r %s))"
              (emacs-wisent-grammar-converter--token-value namespace)))
            (setq continue nil))
           ('BITWISE_AND_ASSIGNMENT
            (setq
             return-string
             (format
-             "(plist-put return-item 'value (logand (plist-get return-item 'value) %s))"
+             "(setq r (logand r %s))"
              (emacs-wisent-grammar-converter--token-value namespace)))
            (setq continue nil))
           ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS))
@@ -592,9 +583,9 @@
            (setq
             return-string
             (format
-             "(plist-put return-string %s)"
+             "(semantic-tag-put-attribute r %s)"
              (emacs-wisent-grammar-converter--member-operator
-              "return-item"
+              "r"
               namespace)))
            (setq continue nil))
           (_ (signal 'error (list (format "Unexpected return token %s, remaining tokens: %s" token emacs-wisent-grammar-converter--lexer-tokens-stack)))))))
@@ -623,17 +614,15 @@
                (setq
                 return-string
                 (format
-                 "(%s%s '%s %s)"
-                 namespace
-                 name
+                 "(%s '%s %s)"
+                 (upcase name)
                  argument-string
                  (emacs-wisent-grammar-converter--token-value namespace)))
              (setq
               return-string
               (format
-               "(%s%s %s)"
-               namespace
-               name
+               "(%s %s)"
+               (upcase name)
                (emacs-wisent-grammar-converter--token-value namespace)))))
           ('BITWISE_OR_ASSIGNMENT
            (unless closed
@@ -643,22 +632,19 @@
                (setq
                 return-string
                 (format
-                 "(%s%s '%s (logior (%s%s '%s) %s))"
-                 namespace
-                 name
+                 "(%s '%s (logior (%s%s '%s) %s))"
+                 (upcase name)
                  argument-string
-                 namespace
-                 name
+                 (upcase namespace)
+                 (upcase name)
                  argument-string
                  (emacs-wisent-grammar-converter--token-value namespace)))
              (setq
               return-string
               (format
-               "(%s%s (logior (%s%s) %s))"
-               namespace
-               name
-               namespace
-               name
+               "(%s (logior (%s) %s))"
+               (upcase name)
+               (upcase name)
                (emacs-wisent-grammar-converter--token-value namespace)))))
           ('BITWISE_AND_ASSIGNMENT
            (unless closed
@@ -668,22 +654,18 @@
                (setq
                 return-string
                 (format
-                 "(%s%s '%s (logand (%s%s '%s) %s))"
-                 namespace
-                 name
+                 "(%s '%s (logand (%s '%s) %s))"
+                 (upcase name)
                  argument-string
-                 namespace
-                 name
+                 (upcase name)
                  argument-string
                  (emacs-wisent-grammar-converter--token-value namespace)))
              (setq
               return-string
               (format
-               "(%s%s (logand (%s%s) %s))"
-               namespace
-               name
-               namespace
-               name
+               "(%s (logand (%s) %s))"
+               (upcase name)
+               (upcase name)
                (emacs-wisent-grammar-converter--token-value namespace)))))
           ('CLOSE_PARENTHESIS
            (when closed
@@ -696,16 +678,14 @@
                  (setq
                   return-string
                   (format
-                   "(%s%s %s)"
-                   namespace
-                   name
+                   "(%s %s)"
+                   (upcase name)
                    argument-string))
                (setq
                 return-string
                 (format
-                 "(%s%s)"
-                 namespace
-                 name)))
+                 "(%s)"
+                 (upcase name))))
              (setq closed t)))
           (_
            (if closed
@@ -917,11 +897,11 @@
         ('RETURN
          (setq
           return-string
-          "(plist-get 'value return-item)"))
+          "r"))
         ('PARAMETER
          (setq
           return-string
-          (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
+          token-value))
         ('NULL
          (setq
           return-string
@@ -988,7 +968,7 @@
             (concat
              return-string
              (format
-              " (logior (plist-get %s '%s) "
+              " (logior (semantic-tag-get-attribute %s '%s) "
               parent
               variable)
              (emacs-wisent-grammar-converter--token-value namespace)
@@ -1000,7 +980,7 @@
             (concat
              return-string
              (format
-              " (logand (plist-get %s '%s) "
+              " (logand (semantic-tag-get-attribute %s '%s) "
               parent
               variable)
              (emacs-wisent-grammar-converter--token-value namespace)
@@ -1079,15 +1059,15 @@
                      ;; Pop member operator
                      (pop emacs-wisent-grammar-converter--lexer-tokens-stack)
                      (let ((attribute (pop emacs-wisent-grammar-converter--lexer-tokens-stack))
-                           (name "return-item"))
+                           (name "r"))
                        (when (equal token-id 'PARAMETER)
                          (setq
                           name
-                          (emacs-wisent-grammar-converter--parameter-to-plist token-value)))
+                          token-value))
                        (setq
                         condition-subject-string
                         (format
-                         "(plist-get %s '%s)"
+                         "(semantic-tag-get-attribute %s '%s)"
                          name
                          (car (cdr attribute))))))
                  (setq
@@ -1180,7 +1160,7 @@
             (concat
              return-string
              (format
-              "(setq return-item '%s%s)"
+              "(setq r '%s%s)"
               namespace
               token-value))))
           ('VARIABLE
@@ -1244,7 +1224,7 @@
             (concat
              return-string
              (format
-              "(setq return-item '%s%s)"
+              "(setq r '%s%s)"
               namespace
               token-value))))
           ('VARIABLE

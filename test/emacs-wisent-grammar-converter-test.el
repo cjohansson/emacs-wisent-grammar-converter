@@ -584,6 +584,7 @@
            "(let ((r)) (semantic-tag-put-attribute $1 'attr 'zend_name_not_fq) r)"))
   (message "Passed test: set attribute of parameter")
 
+  ;; TODO
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -763,7 +764,7 @@
              (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'SYMBOL "zend_acc_static")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (setq r $2)(semantic-tag-put-attribute r 'flags (logior (semantic-tag-get-attribute 'r 'flags) 'zend_acc_static)) r)"))
+           "(let ((r)) (setq r $2)(semantic-tag-put-attribute r 'flags (logior (semantic-tag-get-attribute r 'flags) 'zend_acc_static)) r)"))
   (message "Passed test: de-referenced variable first test")
   ;; { $$ = $2; ((zend_ast_decl *) $$)->flags |= ZEND_ACC_STATIC; }
 
