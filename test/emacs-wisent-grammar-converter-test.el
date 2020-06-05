@@ -29,7 +29,8 @@
 ;;;;TODO 1. Don't initialize all parameters and return-item as property-lists
 ;;;;TODO 2. Use (semantic-tag-put-attribute $3 'attr value) and (semantic-tag-get-attribute $3 'attr) for attributes
 ;;;;TODO 3. Replace all terminals in rules with symbols that can be user-defined
-;; TODO Refactor code into separate files
+;; TODO Refactor code into separate files (parser / lexer)
+;; TODO Add unit tests for formatting rules
 
 
 ;;; Code:
@@ -154,9 +155,9 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create_ex")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_include_or_eval")
+            (list 'SYMBOL "ZEND_AST_INCLUDE_OR_EVAL")
             (list 'COMMA ",")
-            (list 'SYMBOL "zend_require_once")
+            (list 'SYMBOL "ZEND_REQUIRE_ONCE")
             (list 'COMMA ",")
             (list 'PARAMETER "$2")
             (list 'CLOSE_PARENTHESIS ")")
@@ -180,7 +181,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_trait_alias")
+            (list 'SYMBOL "ZEND_AST_TRAIT_ALIAS")
             (list 'COMMA ",")
             (list 'PARAMETER "$1")
             (list 'COMMA ",")
@@ -201,7 +202,7 @@
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "attr")
             (list 'ASSIGNMENT "=")
-            (list 'SYMBOL "zend_name_not_fq")
+            (list 'SYMBOL "ZEND_NAME_NOT_FQ")
             (list 'SEMICOLON ";"))))
 
   (should (equal
@@ -213,7 +214,7 @@
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "attr")
             (list 'BITWISE_OR_ASSIGNMENT "|=")
-            (list 'SYMBOL "zend_type_nullable")
+            (list 'SYMBOL "ZEND_TYPE_NULLABLE")
             (list 'SEMICOLON ";"))))
 
   (should (equal
@@ -224,7 +225,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_prop_elem")
+            (list 'SYMBOL "ZEND_AST_PROP_ELEM")
             (list 'COMMA ",")
             (list 'PARAMETER "$1")
             (list 'COMMA ",")
@@ -264,7 +265,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create_decl")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_closure")
+            (list 'SYMBOL "ZEND_AST_CLOSURE")
             (list 'COMMA ",")
             (list 'PARAMETER "$2")
             (list 'BITWISE_OR "|")
@@ -297,7 +298,7 @@
             (list 'PARAMETER "$8")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";")
-            (list 'FUNCTION "cg")
+            (list 'FUNCTION "CG")
             (list 'OPEN_PARENTHESIS "(")
             (list 'VARIABLE "extra_fn_flags")
             (list 'CLOSE_PARENTHESIS ")")
@@ -324,7 +325,7 @@
             (list 'MEMBER_OPERATOR "->")
             (list 'VARIABLE "flags")
             (list 'BITWISE_OR_ASSIGNMENT "|=")
-            (list 'SYMBOL "zend_acc_static")
+            (list 'SYMBOL "ZEND_ACC_STATIC")
             (list 'SEMICOLON ";"))))
   (message "Passed lexer test: lexing of de-referenced variable")
 
@@ -337,9 +338,9 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create_decl")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_class")
+            (list 'SYMBOL "ZEND_AST_CLASS")
             (list 'COMMA ",")
-            (list 'SYMBOL "zend_acc_anon_class")
+            (list 'SYMBOL "ZEND_ACC_ANON_CLASS")
             (list 'COMMA ",")
             (list 'PARAMETER "$2")
             (list 'COMMA ",")
@@ -360,7 +361,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_new")
+            (list 'SYMBOL "ZEND_AST_NEW")
             (list 'COMMA ",")
             (list 'VARIABLE "decl")
             (list 'COMMA ",")
@@ -379,7 +380,7 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "zend_ast_create")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_ast_halt_compiler")
+            (list 'SYMBOL "ZEND_AST_HALT_COMPILER")
             (list 'COMMA ",")
             (list 'FUNCTION "zend_ast_create_zval_from_long")
             (list 'OPEN_PARENTHESIS "(")
@@ -438,7 +439,7 @@
             (list 'RETURN "$$")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'OPEN_SQUARE_BRACKET "{")
-            (list 'SYMBOL "yyerror")
+            (list 'SYMBOL "YYERROR")
             (list 'SEMICOLON ";")
             (list 'CLOSE_SQUARE_BRACKET "}"))))
   (message "Passed lexer test: if block checking return value")
@@ -449,7 +450,24 @@
 			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
 		")
            (list
-            (list 'RETURN "$$") (list 'ASSIGNMENT "=") (list 'PARAMETER "$2") (list 'SEMICOLON ";") (list 'IF "if") (list 'OPEN_PARENTHESIS "(") (list 'RETURN "$$") (list 'MEMBER_OPERATOR "->") (list 'VARIABLE "kind") (list 'EQUAL "==") (list 'SYMBOL "zend_ast_conditional") (list 'CLOSE_PARENTHESIS ")") (list 'RETURN "$$") (list 'MEMBER_OPERATOR "->") (list 'VARIABLE "attr") (list 'ASSIGNMENT "=") (list 'SYMBOL "zend_parenthesized_conditional") (list 'SEMICOLON ";"))))
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'PARAMETER "$2")
+            (list 'SEMICOLON ";")
+            (list 'IF "if")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'RETURN "$$")
+            (list 'MEMBER_OPERATOR "->")
+            (list 'VARIABLE "kind")
+            (list 'EQUAL "==")
+            (list 'SYMBOL "ZEND_AST_CONDITIONAL")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'RETURN "$$")
+            (list 'MEMBER_OPERATOR "->")
+            (list 'VARIABLE "attr")
+            (list 'ASSIGNMENT "=")
+            (list 'SYMBOL "ZEND_PARENTHESIZED_CONDITIONAL")
+            (list 'SEMICOLON ";"))))
   (message "Passed lexer test: if block changing return value attribute")
 
   )

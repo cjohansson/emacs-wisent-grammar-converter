@@ -76,7 +76,7 @@
           string
           start)
          start)
-        (push (list 'FUNCTION (downcase (match-string 1 string))) tokens)
+        (push (list 'FUNCTION (match-string 1 string)) tokens)
         (setq start (match-end 1)))
        ((equal
          (string-match
@@ -161,7 +161,7 @@
           string
           start)
          start)
-        (push (list 'SYMBOL (downcase (match-string 0 string))) tokens)
+        (push (list 'SYMBOL (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -169,7 +169,7 @@
           string
           start)
          start)
-        (push (list 'VARIABLE (downcase (match-string 0 string))) tokens)
+        (push (list 'VARIABLE (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
@@ -406,31 +406,10 @@
     (setq namespace ""))
   
   (let ((return-string nil)
-        (declaration-items nil)
-        (property-items '(("return-item" "$$"))))
-
-    ;; Generate list of every parameter and return variable in block
-    (dolist (item emacs-wisent-grammar-converter--lexer-tokens-stack)
-      (when (equal (car item) 'PARAMETER)
-        (let* ((property-value (car (cdr item)))
-               (property-name
-                (emacs-wisent-grammar-converter--parameter-to-plist property-value)))
-          (push (list
-                 property-name
-                 property-value)
-                property-items))))
+        (declaration-items nil))
 
     ;; Initialize all parameters and return value as property-lists
-    (setq return-string "(let (")
-    (dolist (item property-items)
-      (setq
-       return-string
-       (concat
-        return-string
-        (format
-         "(%s '(value %s))"
-         (car item)
-         (car (cdr item))))))
+    (setq return-string "(let ((r)")
 
     ;; Add variables that are declared in body
     (let ((in-declaration nil))
@@ -453,14 +432,14 @@
          (concat
           return-string
           (format
-           "(%s nil)"
+           "(%s)"
            item)))))
 
     (setq
      return-string
      (concat
       return-string
-      ")"))
+      ") "))
 
     (let ((last-token nil))
       (while emacs-wisent-grammar-converter--lexer-tokens-stack
@@ -498,7 +477,7 @@
               (concat
                return-string
                (format
-                "(setq return-item '%s%s)"
+                "(setq r '%s%s)"
                 namespace
                 token-value))))
             ('DOC_COMMENT
@@ -531,7 +510,7 @@
             (_ (signal 'error (list (format "Unexpected root token %s" token)))))
           (setq last-token token))))
 
-    (format "%s return-item)" return-string)))
+    (format "%s r)" return-string)))
 
 (defun emacs-wisent-grammar-converter--variable (name namespace)
   "Parse variable NAME in NAMESPACE."
@@ -550,7 +529,7 @@
        "")
       ('MEMBER_OPERATOR
        (format
-        "(plist-put %s%s '%s)"
+        "(semantic-tag-put-attribute %s%s '%s)"
         namespace
         name
         (emacs-wisent-grammar-converter--member-operator name namespace)))
@@ -564,13 +543,13 @@
     (pcase token-id
       ('ASSIGNMENT
        (format
-        "(plist-put %s 'value %s)"
-        (emacs-wisent-grammar-converter--parameter-to-plist name)
+        "(setq %s %s)"
+        name
         (emacs-wisent-grammar-converter--token-value namespace)))
       ('MEMBER_OPERATOR
        (format
-        "(plist-put %s %s)"
-        (emacs-wisent-grammar-converter--parameter-to-plist name)
+        "(semantic-tag-put-attribute %s %s)"
+        name
         (emacs-wisent-grammar-converter--member-operator
          (emacs-wisent-grammar-converter--parameter-to-plist name)
          namespace)))
