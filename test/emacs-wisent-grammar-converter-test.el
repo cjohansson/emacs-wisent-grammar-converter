@@ -25,10 +25,7 @@
 ;; Run from terminal with `make test'
 
 
-;; TODO Generate more compatible code
-;;;;TODO 1. Don't initialize all parameters and return-item as property-lists
-;;;;TODO 2. Use (semantic-tag-put-attribute $3 'attr value) and (semantic-tag-get-attribute $3 'attr) for attributes
-;;;;TODO 3. Replace all terminals in rules with symbols that can be user-defined
+;; TODO Replace all terminals in rules with symbols that can be user-defined
 ;; TODO Refactor code into separate files (parser / lexer)
 ;; TODO Add unit tests for formatting rules
 
@@ -57,7 +54,7 @@
      "$$ = zend_ast_create(ZEND_AST_HALT_COMPILER,
 			      zend_ast_create_zval_from_long(zend_get_scanned_file_offset()));
 			  zend_stop_lexing();")
-    "(let ((r)) (setq r (ZEND_AST_CREATE 'zend_ast_halt_compiler (ZEND_AST_CREATE_ZVAL_FROM_LONG (ZEND_GET_SCANNED_FILE_OFFSET)))) (zend_stop_lexing) r)"
+    "(let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_HALT_COMPILER (ZEND_AST_CREATE_ZVAL_FROM_LONG (ZEND_GET_SCANNED_FILE_OFFSET))))(ZEND_STOP_LEXING) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 2")
 
@@ -85,7 +82,7 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = NULL; zend_throw_exception(zend_ce_compile_error,
 			      \"__HALT_COMPILER() can only be used from the outermost scope\", 0); YYERROR; ")
-    "(let ((r)) (setq r nil)(ZEND_THROW_EXCEPTION zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0) (setq r 'yerror) r)"
+    "(let ((r)) (setq r nil)(ZEND_THROW_EXCEPTION zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0)(setq r 'YYERROR) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 5")
 
@@ -94,14 +91,14 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_ast_create_decl(ZEND_AST_METHOD, $3 | $1 | $12, $2, $5,
 				  zend_ast_get_str($4), $7, NULL, $11, $9); CG(extra_fn_flags) = $10; ")
-    "(let ((r))(setq r (ZEND_AST_CREATE_DECL 'zend_ast_method (logior $3 (logior $1 $12)) $2 $5 (ZEND_AST_GET_STR $4) $7 nil $11 $9))(CG 'extra_fn_flags $10) r)"))
+    "(let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_METHOD (logior $3 (logior $1 $12)) $2 $5 (ZEND_AST_GET_STR $4) $7 nil $11 $9))(CG 'extra_fn_flags $10) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 6")
 
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }")
-    "(let ((r))(setq r (ZEND_ADD_CLASS_MODIFIER $1 $2))(if (not r) (setq r 'yyerror)) r)"))
+    "(let ((r)) (setq r (ZEND_ADD_CLASS_MODIFIER $1 $2))(if (not r) (setq r 'YYERROR)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
 
   (should
@@ -110,7 +107,7 @@
      "			$$ = $2;
 			if ($$->kind == ZEND_AST_CONDITIONAL) { $$->attr = ZEND_PARENTHESIZED_CONDITIONAL; }
 		")
-    "(let ((r)) (setq r $2) (if (equal (semantic-tag-get-attribute r 'kind) 'zend_ast_conditional) (semantic-tag-put-attribute r 'attr 'zend_parenthesized_conditional)) r)"))
+    "(let ((r)) (setq r $2)(if (equal (semantic-tag-get-attribute r 'kind) 'ZEND_AST_CONDITIONAL) (semantic-tag-put-attribute r 'attr 'ZEND_PARENTHESIZED_CONDITIONAL)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 8")
 
   (should
@@ -119,7 +116,7 @@
      "			$$ = $2;
 			if ($$->kind == ZEND_AST_CONDITIONAL) $$->attr = ZEND_PARENTHESIZED_CONDITIONAL;
 		")
-    "(let ((r)) (setq r $2)(if (equal (semantic-tag-get-attribute r 'kind) 'zend_ast_conditional) (semantic-tag-put-attribute r 'attr 'zend_parenthesized_conditional)) r)"))
+    "(let ((r)) (setq r $2)(if (equal (semantic-tag-get-attribute r 'kind) 'ZEND_AST_CONDITIONAL) (semantic-tag-put-attribute r 'attr 'ZEND_PARENTHESIZED_CONDITIONAL)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 9")
 
   )
@@ -584,7 +581,6 @@
            "(let ((r)) (semantic-tag-put-attribute $1 'attr 'zend_name_not_fq) r)"))
   (message "Passed test: set attribute of parameter")
 
-  ;; TODO
   (should (equal
            (emacs-wisent-grammar-converter--converted-lexer-tokens-to-lisp
             (list
@@ -899,7 +895,7 @@
       (list 'PARAMETER "$1")
       (list 'CLOSE_PARENTHESIS ")")
       (list 'SEMICOLON ";")))
-    "(let ((r));; allow single trailing comma
+    "(let ((r)) ;; allow single trailing comma
 (setq r (ZEND_AST_LIST_RTRIM $1)) r)"))
   (message "Passed test: code starting with doc comment")
 

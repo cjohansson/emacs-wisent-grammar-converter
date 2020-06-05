@@ -3,8 +3,8 @@
 ;; Author: Christian Johansson <christian@cvj.se>
 ;; Maintainer: Christian Johansson <christian@cvj.se>
 ;; Created: 9 Aug 2018
-;; Modified: 13 Apr 2020
-;; Version: 0.2.1
+;; Modified: 5 Jun 2020
+;; Version: 0.2.2
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-wisent-grammar-converter
 
@@ -410,9 +410,11 @@
           (let ((token-id (car item))
                 (token-value (car (cdr item))))
             (pcase token-id
-              ('VARIABLE
-               (push token-value declaration-items))
-              ((or 'SEMICOLON 'POINTER)
+              ((or 'VARIABLE 'POINTER)
+               (unless (string= token-value "")
+                 (push token-value declaration-items))
+               (setq in-declaration nil))
+              ((or 'SEMICOLON)
                (setq in-declaration nil)))))
          ((equal (car item) 'DECLARATION)
           (setq in-declaration t)))))
