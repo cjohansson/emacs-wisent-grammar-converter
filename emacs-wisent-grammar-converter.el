@@ -56,7 +56,7 @@
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
-(defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header prefix)
+(defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header prefix terminal-replacements)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER if specified, use PREFIX if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer destination)))
     (switch-to-buffer buffer)
@@ -64,7 +64,7 @@
 
     ;; Remove unnecessary starting and ending stuff
     (let ((start (point))
-          (level "start")
+          (level 'start)
           (continue t)
           (grammar "")
           (block "")
@@ -81,15 +81,15 @@
       (while continue
         (pcase level
 
-          ("start"
+          ('start
            (if (search-forward-regexp "\n+%%" nil t)
                (progn
                  (message "Found start at '%s'" (point))
-                 (setq level "root"))
+                 (setq level 'root))
              (setq continue nil)
              (message "Found no start of grammar")))
 
-          ("root"
+          ('root
 
            ;; Can we find something like    abc_def:
            (if (search-forward-regexp "\n+\\(\\([a-z_]+\\)[\n\t ]*:\\|%%\n+\\)" nil t)
@@ -104,7 +104,7 @@
                          (setq rule "")
                          (setq rule-token-count 0)
                          (message "Found block '%s' at '%s'" block (point))
-                         (setq level "block"))
+                         (setq level 'block))
                      (message "Found end of rules at '%s', match-string '%s'" (point) (match-string 0))
                      (setq continue nil))))
 
@@ -112,7 +112,7 @@
                (message "Failed to find block-start")
                (setq continue nil))))
 
-          ("block"
+          ('block
 
            ;; Can we find a | or { or ; character?
            (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[a-zA-Z_]+\\)" nil t)
@@ -141,18 +141,17 @@
                      (setq grammar (concat grammar "\n    ;\n"))
                      (setq rule-token-count 0)
                      (message "Ended block at '%s'" (point))
-                     (setq level "root"))))
+                     (setq level 'root))))
 
                 ;; Is it a logic start delimiter?
                 ((string= (match-string 1) "{")
                  (if (and (> rule-token-count 0) (not last-was-block-comment))
                      (setq rule (concat rule " "))
                    (setq rule (concat rule "\n    ")))
-                 (setq rule (concat rule "(progn "))
                  (setq last-was-block-comment nil)
                  (setq logic-start (point))
                  (message "Found logic start at '%s'" (point))
-                 (setq level "logic"))
+                 (setq level 'logic))
 
                 ;; Is it a single-quote?
                 ((string= (match-string 1) "'")
@@ -163,6 +162,13 @@
                        (progn
                          (setq quote-end (point))
                          (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)))
+
+                         ;; Optionally replace terminal with user-specified non-terminal here
+                         (when terminal-replacements
+                           (if (gethash quote terminal-replacements)
+                               (setq quote (gethash quote terminal-replacements))
+                             (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
+
                          (when (> rule-token-count 0)
                            (setq rule (concat rule " ")))
                          (setq rule (concat rule quote))
@@ -178,8 +184,16 @@
                        (quote))
                    (if (search-forward-regexp "\"" nil t)
                        (progn
+                         
                          (setq quote-end (point))
                          (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)))
+
+                         ;; Optionally replace terminal with user-specified non-terminal here
+                         (when terminal-replacements
+                           (if (gethash quote terminal-replacements)
+                               (setq quote (gethash quote terminal-replacements))
+                             (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
+
                          (when (> rule-token-count 0)
                            (setq rule (concat rule " ")))
                          (setq rule (concat rule quote))
@@ -221,7 +235,7 @@
                (message "Failed to find rule delimiter")
                (setq continue nil))))
 
-          ("logic"
+          ('logic
 
            ;; Can we find a { or } character?
            (if (search-forward-regexp "\\({\\|}\\|'\\|\"\\)" nil t)
@@ -241,11 +255,9 @@
 
                 ((string= (match-string 1) "}")
                  (setq logic-end (point))
-                 (setq logic (emacs-wisent-grammar-converter--string-trim (buffer-substring logic-start (- logic-end 1))))
-
+                 (setq logic (buffer-substring logic-start (- logic-end 1)))
                  (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic prefix))
-                 
-                 (setq rule (concat rule logic ")"))
+                 (setq rule (concat rule logic))
 
                  (let ((previous (pop parse-stack)))
                    ;; Do we have a parse-stack?
@@ -253,7 +265,7 @@
                        (setq logic-start (point))
                      (progn
                        (message "Ending logic at '%s'" (point))
-                       (setq level "block")))))
+                       (setq level 'block)))))
 
                 ;; Is it the start of nested logic?
                 ((string= (match-string 1) "{")
