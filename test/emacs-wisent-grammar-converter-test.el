@@ -25,8 +25,15 @@
 ;; Run from terminal with `make test'
 
 
-;; TODO Replace all terminals in rules with symbols that can be user-defined
+;; TODO Add support for special rule tokens like %empty and %prec
+;;;; TODO Preserve %prec and %empty
+;;;; TODO Add %empty rule
+;;;; TODO preserve %empty empty rule with ;; empty\n https://www.gnu.org/software/bison/manual/html_node/Empty-Rules.html#Empty-Rules
+;;;; TODO Support %empty in non-empty rule: %prec PREC_ARROW_FUNCTION %empty (let
+;;;; TODO preserve %prec as is https://www.gnu.org/software/bison/manual/html_node/Contextual-Precedence.html
 ;; TODO Add unit tests for formatting rules
+;; TODO Copy parser configuration
+;; TODO Add unit test for { if (!zend_handle_encoding_declaration($3)) { YYERROR; } }
 
 
 ;;; Code:
@@ -117,6 +124,14 @@
 		")
     "(let ((r)) (setq r $2)(if (equal (semantic-tag-get-attribute r 'kind) 'ZEND_AST_CONDITIONAL) (semantic-tag-put-attribute r 'attr 'ZEND_PARENTHESIZED_CONDITIONAL)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 9")
+
+  (should
+   (equal
+    (emacs-wisent-grammar-converter--reformat-logic-block
+     "if (!zend_handle_encoding_declaration($3)) { YYERROR; }")
+    "(let ((r)) (if (not (ZEND_HANDLE_ENCODING_DECLARATION $3)) (setq r 'YYERROR)) r)"
+    ))
+  (message "Passed Bison-C to Wisent-Emacs Lisp test 10")
 
   )
 
