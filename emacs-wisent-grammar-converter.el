@@ -115,7 +115,7 @@
           ('block
 
            ;; Can we find a | or { or ; character?
-           (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[a-zA-Z_]+\\)" nil t)
+           (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[%a-zA-Z_]+\\)" nil t)
 
                (cond
 
@@ -293,8 +293,9 @@
 
       (goto-char (point-max))
 
-      (insert ";; NOTE Generated grammar starts here\n\n")
+      (insert ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n")
       (insert grammar)
+      (insert "\n\n%%")
       (insert "\n\n;; NOTE Generated grammar ends here")
 
       ;; Untabify and clean-up white-spaces

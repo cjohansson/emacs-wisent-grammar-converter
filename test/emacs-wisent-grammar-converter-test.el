@@ -25,15 +25,13 @@
 ;; Run from terminal with `make test'
 
 
-;; TODO Add support for special rule tokens like %empty and %prec
-;;;; TODO Preserve %prec and %empty
-;;;; TODO Add %empty rule
-;;;; TODO preserve %empty empty rule with ;; empty\n https://www.gnu.org/software/bison/manual/html_node/Empty-Rules.html#Empty-Rules
-;;;; TODO Support %empty in non-empty rule: %prec PREC_ARROW_FUNCTION %empty (let
-;;;; TODO preserve %prec as is https://www.gnu.org/software/bison/manual/html_node/Contextual-Precedence.html
 ;; TODO Add unit tests for formatting rules
 ;; TODO Copy parser configuration
-;; TODO Add unit test for { if (!zend_handle_encoding_declaration($3)) { YYERROR; } }
+;; TODO Support rules like this:
+;; T_DECLARE '(' const_list ')'
+;; 			{ if (!zend_handle_encoding_declaration($3)) { YYERROR; } }
+;; 		declare_statement
+;; 			{ $$ = zend_ast_create(ZEND_AST_DECLARE, $3, $6); }
 
 
 ;;; Code:
