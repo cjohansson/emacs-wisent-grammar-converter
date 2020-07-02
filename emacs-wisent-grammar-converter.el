@@ -68,7 +68,7 @@
     (goto-char (point-max))
     (insert "\n\n"))
 
-  (goto-char (point-max))
+  (goto-char (point-min))
 
   ;; Remove unnecessary starting and ending stuff
   (let ((start (point))
@@ -112,7 +112,7 @@
                        (setq grammar (concat grammar (format "\n%s\n    " (match-string 1))))
                        (setq block (match-string 1))
                        (setq rule "")
-                       (setq rule-start (match-eng 0))
+                       (setq rule-start (match-end 0))
                        (setq rule-token-count 0)
                        (message "Found block '%s' at '%s'" block (point))
                        (setq level 'block))
