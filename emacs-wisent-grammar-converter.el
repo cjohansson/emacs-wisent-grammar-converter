@@ -59,18 +59,9 @@
 (defun emacs-wisent-grammar-convert--parse-buffer (buffer &optional header-string prefix terminal-replacements)
   "Convert buffer grammar, prepend HEADER-string if specified, use PREFIX if specified.  Return the conversion as a string."
   (switch-to-buffer buffer)
-  (goto-char (point-min))
-
-  ;; Prepend header if specified
-  (when header-string
-    (goto-char (point-min))
-    (insert header-string)
-    (goto-char (point-max))
-    (insert "\n\n"))
-
-  (goto-char (point-min))
 
   ;; Remove unnecessary starting and ending stuff
+  (goto-char (point-min))
   (let ((start (point))
         (level 'start)
         (continue t)
@@ -269,10 +260,18 @@
 
         (_ (setq continue nil))))
 
-    ;; Clear buffer
+    ;; Clear entire buffer
     (delete-region (point-min) (point-max))
 
     (goto-char (point-max))
+
+    ;; Prepend header if specified
+    (when header-string
+      (goto-char (point-min))
+      (insert header-string)
+      (goto-char (point-max))
+      (insert "\n\n")
+      (goto-char (point-max)))
 
     (insert ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n")
     (insert grammar)

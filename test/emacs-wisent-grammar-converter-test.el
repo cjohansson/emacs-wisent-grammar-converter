@@ -79,6 +79,19 @@
     ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nreserved_non_modifiers:\n    T_INCLUDE\n    | T_INCLUDE_ONCE\n    | T_EVAL\n    | T_REQUIRE\n    | T_REQUIRE_ONCE\n    | T_LOGICAL_OR\n    | T_LOGICAL_XOR\n    | T_LOGICAL_AND\n    | T_INSTANCEOF\n    | T_NEW\n    | T_CLONE\n    | T_EXIT\n    | T_IF\n    | T_ELSEIF\n    | T_ELSE\n    | T_ENDIF\n    | T_ECHO\n    | T_DO\n    | T_WHILE\n    | T_ENDWHILE\n    | T_FOR\n    | T_ENDFOR\n    | T_FOREACH\n    | T_ENDFOREACH\n    | T_DECLARE\n    | T_ENDDECLARE\n    | T_AS\n    | T_TRY\n    | T_CATCH\n    | T_FINALLY\n    | T_THROW\n    | T_USE\n    | T_INSTEADOF\n    | T_GLOBAL\n    | T_VAR\n    | T_UNSET\n    | T_ISSET\n    | T_EMPTY\n    | T_CONTINUE\n    | T_GOTO\n    | T_FUNCTION\n    | T_CONST\n    | T_RETURN\n    | T_PRINT\n    | T_YIELD\n    | T_LIST\n    | T_SWITCH\n    | T_ENDSWITCH\n    | T_CASE\n    | T_DEFAULT\n    | T_BREAK\n    | T_ARRAY\n    | T_CALLABLE\n    | T_EXTENDS\n    | T_IMPLEMENTS\n    | T_NAMESPACE\n    | T_TRAIT\n    | T_INTERFACE\n    | T_CLASS\n    | T_CLASS_C\n    | T_TRAIT_C\n    | T_FUNC_C\n    | T_METHOD_C\n    | T_LINE\n    | T_FILE\n    | T_DIR\n    | T_NS_C\n    | T_FN\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
     ))
 
+  ;; Test header-string
+  (should
+   (equal
+    (emacs-wisent-grammar-converter-test--parse-string
+     "\n\n%%\n\nreserved_non_modifiers:\n	  T_INCLUDE | T_INCLUDE_ONCE | T_EVAL | T_REQUIRE | T_REQUIRE_ONCE | T_LOGICAL_OR | T_LOGICAL_XOR | T_LOGICAL_AND\n	| T_INSTANCEOF | T_NEW | T_CLONE | T_EXIT | T_IF | T_ELSEIF | T_ELSE | T_ENDIF | T_ECHO | T_DO | T_WHILE | T_ENDWHILE\n	| T_FOR | T_ENDFOR | T_FOREACH | T_ENDFOREACH | T_DECLARE | T_ENDDECLARE | T_AS | T_TRY | T_CATCH | T_FINALLY\n	| T_THROW | T_USE | T_INSTEADOF | T_GLOBAL | T_VAR | T_UNSET | T_ISSET | T_EMPTY | T_CONTINUE | T_GOTO\n	| T_FUNCTION | T_CONST | T_RETURN | T_PRINT | T_YIELD | T_LIST | T_SWITCH | T_ENDSWITCH | T_CASE | T_DEFAULT | T_BREAK\n	| T_ARRAY | T_CALLABLE | T_EXTENDS | T_IMPLEMENTS | T_NAMESPACE | T_TRAIT | T_INTERFACE | T_CLASS\n	| T_CLASS_C | T_TRAIT_C | T_FUNC_C | T_METHOD_C | T_LINE | T_FILE | T_DIR | T_NS_C | T_FN\n;\n\n\n%%\n"
+     "\nrandom prefix stuff\n")
+    "random prefix stuff\n\n\n;; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nreserved_non_modifiers:\n    T_INCLUDE\n    | T_INCLUDE_ONCE\n    | T_EVAL\n    | T_REQUIRE\n    | T_REQUIRE_ONCE\n    | T_LOGICAL_OR\n    | T_LOGICAL_XOR\n    | T_LOGICAL_AND\n    | T_INSTANCEOF\n    | T_NEW\n    | T_CLONE\n    | T_EXIT\n    | T_IF\n    | T_ELSEIF\n    | T_ELSE\n    | T_ENDIF\n    | T_ECHO\n    | T_DO\n    | T_WHILE\n    | T_ENDWHILE\n    | T_FOR\n    | T_ENDFOR\n    | T_FOREACH\n    | T_ENDFOREACH\n    | T_DECLARE\n    | T_ENDDECLARE\n    | T_AS\n    | T_TRY\n    | T_CATCH\n    | T_FINALLY\n    | T_THROW\n    | T_USE\n    | T_INSTEADOF\n    | T_GLOBAL\n    | T_VAR\n    | T_UNSET\n    | T_ISSET\n    | T_EMPTY\n    | T_CONTINUE\n    | T_GOTO\n    | T_FUNCTION\n    | T_CONST\n    | T_RETURN\n    | T_PRINT\n    | T_YIELD\n    | T_LIST\n    | T_SWITCH\n    | T_ENDSWITCH\n    | T_CASE\n    | T_DEFAULT\n    | T_BREAK\n    | T_ARRAY\n    | T_CALLABLE\n    | T_EXTENDS\n    | T_IMPLEMENTS\n    | T_NAMESPACE\n    | T_TRAIT\n    | T_INTERFACE\n    | T_CLASS\n    | T_CLASS_C\n    | T_TRAIT_C\n    | T_FUNC_C\n    | T_METHOD_C\n    | T_LINE\n    | T_FILE\n    | T_DIR\n    | T_NS_C\n    | T_FN\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
+    ))
+
+
+  ;; TODO Test prefix
+  ;; TODO Test terminal-replacements
+
   (should
    (equal
     (emacs-wisent-grammar-converter-test--parse-string
