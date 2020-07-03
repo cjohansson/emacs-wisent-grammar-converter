@@ -3,8 +3,8 @@
 ;; Author: Christian Johansson <christian@cvj.se>
 ;; Maintainer: Christian Johansson <christian@cvj.se>
 ;; Created: 9 Aug 2018
-;; Modified: 5 Jun 2020
-;; Version: 0.2.2
+;; Modified: 3 Juk 2020
+;; Version: 0.2.3
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-wisent-grammar-converter
 

@@ -210,11 +210,11 @@
         (setq start (match-end 0)))
        ((equal
          (string-match
-          "\\$\\$"
+          "\\$\\(<[a-zA-Z]+>\\)?\\$"
           string
           start)
          start)
-        (push (list 'RETURN (match-string 0 string)) tokens)
+        (push (list 'RETURN "$$") tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match

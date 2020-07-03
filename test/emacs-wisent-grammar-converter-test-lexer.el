@@ -384,8 +384,8 @@
             (list 'ASSIGNMENT "=")
             (list 'FUNCTION "CG")
             (list 'OPEN_PARENTHESIS "(")
-            (list 'SYMBOL "zend_lineno")
-            (list 'CLOSE_PARENTHESIS)
+            (list 'VARIABLE "zend_lineno")
+            (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
     (message "Passed lexer test: assignment of return-value of function return-value with type conversion")
 

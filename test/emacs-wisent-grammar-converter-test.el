@@ -27,17 +27,6 @@
 
 ;; TODO Copy parser configuration
 
-;; TODO Support rules like this:
-;; T_DECLARE '(' const_list ')'
-;; 			{ if (!zend_handle_encoding_declaration($3)) { YYERROR; } }
-;; 		declare_statement
-;; 			{ $$ = zend_ast_create(ZEND_AST_DECLARE, $3, $6); }
-
-;; TODO Support rules like this:
-;; T_TRAIT { $<num>$ = CG(zend_lineno); }
-;; 		T_STRING backup_doc_comment '{' class_statement_list '}'
-;; 			{ $$ = zend_ast_create_decl(ZEND_AST_CLASS, ZEND_ACC_TRAIT, $<num>2, $4, zend_ast_get_str($3), NULL, NULL, $6, NULL); }
-
 
 ;;; Code:
 
@@ -86,7 +75,7 @@
    (equal
     (emacs-wisent-grammar-converter-test--parse-string
      "\n\n%%\n\nclass_declaration_statement:\n		class_modifiers T_CLASS { $<num>$ = CG(zend_lineno); }\n		T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}'\n			{ $$ = zend_ast_create_decl(ZEND_AST_CLASS, $1, $<num>3, $7, zend_ast_get_str($4), $5, $6, $9, NULL); }\n	|	T_CLASS { $<num>$ = CG(zend_lineno); }\n		T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}'\n			{ $$ = zend_ast_create_decl(ZEND_AST_CLASS, 0, $<num>2, $6, zend_ast_get_str($3), $4, $5, $8, NULL); }\n;\n\n\n%%\n")
-    ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nclass_declaration_statement:\n    class_modifiers T_CLASS (let ((r)) (setq r (CG 'zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_CLASS $1 $3 $7 (ZEND_AST_GET_STR $4) $5 $6 $9 nil)) r)\n    | T_CLASS (let ((r)) (setq r (CG 'zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_CLASS 0 $2 $6 (ZEND_AST_GET_STR $3) $4 $5 $8 nil)) r)\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
+    ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nclass_declaration_statement:\n    class_modifiers T_CLASS (let ((r)) (setq r (CG zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_CLASS $1 $3 $7 (ZEND_AST_GET_STR $4) $5 $6 $9 nil)) r)\n    | T_CLASS (let ((r)) (setq r (CG zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_CLASS 0 $2 $6 (ZEND_AST_GET_STR $3) $4 $5 $8 nil)) r)\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
     ))
 
   (message "Unit tests for parsing entire buffers ended.\n")
@@ -188,7 +177,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "$<num>$ = CG(zend_lineno);")
-    "(let ((r)) (setq r (CG 'zend_lineno) r)"
+    "(let ((r)) (setq r (CG zend_lineno)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 11")
 
