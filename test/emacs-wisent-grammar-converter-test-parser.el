@@ -511,6 +511,31 @@
     "(let ((r)) (setq r (ZEND_AST_CREATE_DECL 'zend_ast_closure (logior $2 $13) $1 $3 (ZEND_STRING_INIT \"{closure}\" (- (SIZEOF \"{closure}\") 1) 0) $5 $7 $11 $8))(CG 'extra_fn_flags $9) r)"))
   (message "Passed test: subtraction of function return in function arguments")
 
+  (should
+   (equal
+    (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp
+     (list
+      (list 'RETURN "$$")
+      (list 'ASSIGNMENT "=")
+      (list 'PARAMETER "$1")
+      (list 'SEMICOLON ";")
+      (list 'IF "if")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'LOGICAL_NOT "!")
+      (list 'OPEN_PARENTHESIS "(")
+      (list 'BITWISE_AND "&")
+      (list 'SYMBOL "ZEND_ACC_PPP_MASK")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'CLOSE_PARENTHESIS ")")
+      (list 'OPEN_CURLY_BRACKET "{")
+      (list 'RETURN "$$")
+      (list 'BITWISE_OR_ASSIGNMENT "|=")
+      (list 'SYMBOL "ZEND_ACC_PUBLIC")
+      (list 'SEMICOLON ";")
+      (list 'CLOSE_CURLY_BRACKET "}"))
+     "(let ((r)) (setq r $1)(if (not (bitiwse-and r 'zend_acc_ppp_mask)) (setq r (bitwise-or r 'zend_acc_public))) r)"))
+   (message "Passed test: subtraction of function return in function arguments")
+
   )
 
 (emacs-wisent-grammar-converter-test-parser--converted-lexer-tokens-to-lisp)

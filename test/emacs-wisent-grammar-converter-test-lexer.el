@@ -387,7 +387,32 @@
             (list 'VARIABLE "zend_lineno")
             (list 'CLOSE_PARENTHESIS ")")
             (list 'SEMICOLON ";"))))
-    (message "Passed lexer test: assignment of return-value of function return-value with type conversion")
+  (message "Passed lexer test: assignment of return-value of function return-value with type conversion")
+
+  (should (equal
+           (emacs-wisent-grammar-converter-lexer--lex-c-string
+            "$$ = $1; if (!($$ & ZEND_ACC_PPP_MASK)) { $$ |= ZEND_ACC_PUBLIC; } ")
+           (list
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'PARAMETER "$1")
+            (list 'SEMICOLON ";")
+            (list 'IF "if")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'LOGICAL_NOT "!")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'BITWISE_AND "&")
+            (list 'SYMBOL "ZEND_ACC_PPP_MASK")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'CLOSE_PARENTHESIS ")")
+            (list 'OPEN_CURLY_BRACKET "{")
+            (list 'RETURN "$$")
+            (list 'BITWISE_OR_ASSIGNMENT "|=")
+            (list 'SYMBOL "ZEND_ACC_PUBLIC")
+            (list 'SEMICOLON ";")
+            (list 'CLOSE_CURLY_BRACKET "}"))))
+  (message "Passed lexer test: if conditional with negation and nested parenthesis")
+
 
   )
 
