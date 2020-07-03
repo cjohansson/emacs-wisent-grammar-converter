@@ -376,6 +376,19 @@
             (list 'SEMICOLON ";"))))
   (message "Passed lexer test: if block changing return value attribute")
 
+  (should (equal
+           (emacs-wisent-grammar-converter-lexer--lex-c-string
+            "$<num>$ = CG(zend_lineno);")
+           (list
+            (list 'RETURN "$$")
+            (list 'ASSIGNMENT "=")
+            (list 'FUNCTION "CG")
+            (list 'OPEN_PARENTHESIS "(")
+            (list 'SYMBOL "zend_lineno")
+            (list 'CLOSE_PARENTHESIS)
+            (list 'SEMICOLON ";"))))
+    (message "Passed lexer test: assignment of return-value of function return-value with type conversion")
+
   )
 
 ;; (setq debug-on-error t)

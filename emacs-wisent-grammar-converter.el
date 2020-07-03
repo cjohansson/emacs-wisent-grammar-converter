@@ -118,141 +118,144 @@
 
             ;; Can we find a | or { or ; character?
             (if (search-forward-regexp "\\(|\\|{\\|;\\|}\\|\'\\|\"\\|/\\*\\|[%a-zA-Z_]+\\)" nil t)
+                (let ((match-subject (match-string 0)))
+                  ;; (message "match-subject: '%s', match-string 0: '%s', match-string 1: '%s'" match-subject (match-string 0) (match-string 1))
 
-                (cond
+                  (cond
 
-                 ;; Is it a rule delimiter (| or ;)?
-                 ((or (string= (match-string 1) "|")
-                      (string= (match-string 1) ";"))
+                   ;; Is it a rule delimiter (| or ;)?
+                   ((or (string= match-subject "|")
+                        (string= match-subject  ";"))
 
-                  (let ((matches-delimiter (string= (match-string 1) "|"))
-                        (matches-end (string= (match-string 1) ";")))
+                    (let ((matches-delimiter (string= (match-string 1) "|"))
+                          (matches-end (string= (match-string 1) ";")))
 
-                    ;; Did last action add a new-line?
-                    (setq grammar (concat grammar rule))
-                    (setq rule "")
+                      ;; Did last action add a new-line?
+                      (setq grammar (concat grammar rule))
+                      (setq rule "")
 
-                    ;; Is it the start of a new rule?
-                    (when matches-delimiter
-                      (setq rule-token-count 0)
-                      (setq grammar (concat grammar "\n    | "))
-                      (message "Found another rule in block at '%s'" (point)))
+                      ;; Is it the start of a new rule?
+                      (when matches-delimiter
+                        (setq rule-token-count 0)
+                        (setq grammar (concat grammar "\n    | "))
+                        (message "Found another rule in block at '%s'" (point)))
 
-                    ;; Is it the end of a block?
-                    (when matches-end
-                      (setq grammar (concat grammar "\n    ;\n"))
-                      (setq rule-token-count 0)
-                      (message "Ended block at '%s'" (point))
-                      (setq level 'root))))
+                      ;; Is it the end of a block?
+                      (when matches-end
+                        (setq grammar (concat grammar "\n    ;\n"))
+                        (setq rule-token-count 0)
+                        (message "Ended block at '%s'" (point))
+                        (setq level 'root))))
 
-                 ;; Is it a logic start delimiter?
-                 ((string= (match-string 1) "{")
-                  (setq logic-start (match-beginning 1))
-                  (let ((continue t))
-                    (while continue
-                      (if (search-forward-regexp "\\(}\\|\'\\|\"\\|/\\*\\|// )" nil t)
+                   ;; Is it a logic start delimiter?
+                   ((string= match-subject "{")
+                    (setq logic-start (1+ (match-beginning 0)))
+                    (let ((continue t))
+                      (while continue
+                        (if (search-forward-regexp "\\(}\\|\'\\|\"\\|/\\*\\|// \\)" nil t)
+                            (progn
+                              (cond
+                               ((string= (match-string 1) "}")
+                                (setq continue nil))
+                               ((string = (match-string 1) "\"")
+                                (unless (search-forward-regexp "\"" nil t)
+                                  (signal 'error (list "Found no ending double quote"))))
+                               ((string = (match-string 1) "'")
+                                (unless (search-forward-regexp "'" nil t)
+                                  (signal 'error (list "Found no ending single quote"))))
+                               ((string = (match-string 1) "/\\*")
+                                (unless (search-forward-regexp "\\*/" nil t)
+                                  (signal 'error (list "Found no ending doc comment"))))
+                               ((string = (match-string 1) "// ")
+                                (unless (search-forward-regexp "\n" nil t)
+                                  (signal 'error (list "Found no ending comment"))))))
+                          (signal 'error (list "Found no ending of logic block")))))
+
+                    (setq logic-end (point))
+                    (setq logic (buffer-substring logic-start (- logic-end 1)))
+
+                    (message "Found logic contents: '%s'" logic)
+                    (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic prefix))
+                    (message "Reformatted logic into '%s'" logic)
+                    (setq rule (concat rule " " logic)))
+
+                   ;; Is it a single-quote?
+                   ((string= match-subject "'")
+                    (let ((quote-start (point))
+                          (quote-end)
+                          (quote))
+                      (if (search-forward-regexp "\'" nil t)
                           (progn
-                            (cond
-                             ((string= (match-string 1) "}")
-                              (setq continue nil))
-                             ((string = (match-string 1) "\"")
-                              (unless (search-forward-regexp "\"" nil t)
-                                (signal 'error (list "Found no ending double quote"))))
-                             ((string = (match-string 1) "'")
-                              (unless (search-forward-regexp "'" nil t)
-                                (signal 'error (list "Found no ending single quote"))))
-                             ((string = (match-string 1) "/\\*")
-                              (unless (search-forward-regexp "\\*/" nil t)
-                                (signal 'error (list "Found no ending doc comment"))))
-                             ((string = (match-string 1) "// ")
-                              (unless (search-forward-regexp "\n" nil t)
-                                (signal 'error (list "Found no ending comment"))))))
-                        (signal 'error (list "Found no ending of logic block")))))
+                            (setq quote-end (point))
+                            (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)))
 
-                  (setq logic-end (point))
-                  (setq logic (buffer-substring logic-start (- logic-end 1)))
+                            ;; Optionally replace terminal with user-specified non-terminal here
+                            (when terminal-replacements
+                              (if (gethash quote terminal-replacements)
+                                  (setq quote (gethash quote terminal-replacements))
+                                (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
 
-                  (message "Found logic contents: '%s'" logic)
-                  (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic prefix))
-                  (setq rule (concat rule logic)))
-
-                 ;; Is it a single-quote?
-                 ((string= (match-string 1) "'")
-                  (let ((quote-start (point))
-                        (quote-end)
-                        (quote))
-                    (if (search-forward-regexp "\'" nil t)
+                            (when (> rule-token-count 0)
+                              (setq rule (concat rule " ")))
+                            (setq rule (concat rule quote))
+                            (setq rule-token-count (+ rule-token-count 1)))
                         (progn
-                          (setq quote-end (point))
-                          (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)))
+                          (message "Failed to find ending single-quote")
+                          (setq continue nil)))))
 
-                          ;; Optionally replace terminal with user-specified non-terminal here
-                          (when terminal-replacements
-                            (if (gethash quote terminal-replacements)
-                                (setq quote (gethash quote terminal-replacements))
-                              (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
+                   ;; Is it a double-quote?
+                   ((string= match-subject "\"")
+                    (let ((quote-start (point))
+                          (quote-end)
+                          (quote))
+                      (if (search-forward-regexp "\"" nil t)
+                          (progn
+                            
+                            (setq quote-end (point))
+                            (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)))
 
-                          (when (> rule-token-count 0)
-                            (setq rule (concat rule " ")))
-                          (setq rule (concat rule quote))
-                          (setq rule-token-count (+ rule-token-count 1)))
-                      (progn
-                        (message "Failed to find ending single-quote")
-                        (setq continue nil)))))
+                            ;; Optionally replace terminal with user-specified non-terminal here
+                            (when terminal-replacements
+                              (if (gethash quote terminal-replacements)
+                                  (setq quote (gethash quote terminal-replacements))
+                                (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
 
-                 ;; Is it a double-quote?
-                 ((string= (match-string 1) "\"")
-                  (let ((quote-start (point))
-                        (quote-end)
-                        (quote))
-                    (if (search-forward-regexp "\"" nil t)
+                            (when (> rule-token-count 0)
+                              (setq rule (concat rule " ")))
+                            (setq rule (concat rule quote))
+                            (setq rule-token-count (+ rule-token-count 1)))
                         (progn
-                          
-                          (setq quote-end (point))
-                          (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)))
+                          (message "Failed to find ending double-quote")
+                          (setq continue nil)))))
 
-                          ;; Optionally replace terminal with user-specified non-terminal here
-                          (when terminal-replacements
-                            (if (gethash quote terminal-replacements)
-                                (setq quote (gethash quote terminal-replacements))
-                              (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
+                   ;; Is it a logic end delimiter?
+                   ((string= match-subject "}")
+                    (message "Invalid grammar, breaking")
+                    (setq continue nil))
 
-                          (when (> rule-token-count 0)
-                            (setq rule (concat rule " ")))
-                          (setq rule (concat rule quote))
-                          (setq rule-token-count (+ rule-token-count 1)))
-                      (progn
-                        (message "Failed to find ending double-quote")
-                        (setq continue nil)))))
-
-                 ;; Is it a logic end delimiter?
-                 ((string= (match-string 1) "}")
-                  (message "Invalid grammar, breaking")
-                  (setq continue nil))
-
-                 ;; Is it a Cdoc comment block start
-                 ((string= (match-string 1) "/*")
-                  (let ((comment-start (point))
-                        (comment-end)
-                        (comment))
-                    (if (search-forward-regexp "*/" nil t)
+                   ;; Is it a Cdoc comment block start
+                   ((string= match-subject "/*")
+                    (let ((comment-start (point))
+                          (comment-end)
+                          (comment))
+                      (if (search-forward-regexp "*/" nil t)
+                          (progn
+                            (setq comment-end (point))
+                            (setq comment (emacs-wisent-grammar-converter--string-trim (buffer-substring comment-start (- comment-end 2))))
+                            (when (> rule-token-count 0)
+                              (setq rule (concat rule " ")))
+                            (setq rule (concat rule ";; " (emacs-wisent-grammar-converter--string-trim comment)))
+                            (setq last-was-block-comment t))
                         (progn
-                          (setq comment-end (point))
-                          (setq comment (emacs-wisent-grammar-converter--string-trim (buffer-substring comment-start (- comment-end 2))))
-                          (when (> rule-token-count 0)
-                            (setq rule (concat rule " ")))
-                          (setq rule (concat rule ";; " (emacs-wisent-grammar-converter--string-trim comment)))
-                          (setq last-was-block-comment t))
-                      (progn
-                        (message "Failed to find ending doc comment block")
-                        (setq continue nil)))))
+                          (message "Failed to find ending doc comment block")
+                          (setq continue nil)))))
 
-                 (t (progn
-                      (when (> rule-token-count 0)
-                        (setq rule (concat rule " ")))
-                      (setq rule (concat rule (match-string 1)))
-                      (setq last-was-block-comment nil)
-                      (setq rule-token-count (+ rule-token-count 1)))))
+                   (t (progn
+                        (when (> rule-token-count 0)
+                          (setq rule (concat rule " ")))
+                        (setq rule (concat rule (match-string 1)))
+                        (setq last-was-block-comment nil)
+                        (setq rule-token-count (+ rule-token-count 1))))))
 
               (progn
                 (message "Failed to find rule delimiter")
