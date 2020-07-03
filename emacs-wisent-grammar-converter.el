@@ -150,13 +150,18 @@
                    ;; Is it a logic start delimiter?
                    ((string= match-subject "{")
                     (setq logic-start (1+ (match-beginning 0)))
-                    (let ((continue t))
+                    (let ((continue t)
+                          (nesting-level 1))
                       (while continue
-                        (if (search-forward-regexp "\\(}\\|\'\\|\"\\|/\\*\\|// \\)" nil t)
+                        (if (search-forward-regexp "\\({\\|}\\|\'\\|\"\\|/\\*\\|// \\)" nil t)
                             (progn
                               (cond
+                               ((string= (match-string 1) "{")
+                                (setq nesting-level (1+ nesting-level)))
                                ((string= (match-string 1) "}")
-                                (setq continue nil))
+                                (setq nesting-level (1- nesting-level))
+                                (when (= nesting-level 0)
+                                  (setq continue nil)))
                                ((string= (match-string 1) "\"")
                                 (unless (search-forward-regexp "\"" nil t)
                                   (signal 'error (list "Found no ending double quote"))))
