@@ -533,8 +533,8 @@
       (list 'SYMBOL "ZEND_ACC_PUBLIC")
       (list 'SEMICOLON ";")
       (list 'CLOSE_CURLY_BRACKET "}"))
-     "(let ((r)) (setq r $1)(if (not (bitiwse-and r 'zend_acc_ppp_mask)) (setq r (bitwise-or r 'zend_acc_public))) r)"))
-   (message "Passed test: subtraction of function return in function arguments")
+     "(let ((r)) (setq r $1)(if (not (bitwise-and r 'zend_acc_ppp_mask)) (setq r (bitwise-or r 'zend_acc_public))) r)")))
+   (message "Passed test: condition bitwise-and on return value")
 
   )
 

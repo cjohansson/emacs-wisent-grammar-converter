@@ -344,10 +344,10 @@
             (list 'LOGICAL_NOT "!")
             (list 'RETURN "$$")
             (list 'CLOSE_PARENTHESIS ")")
-            (list 'OPEN_SQUARE_BRACKET "{")
+            (list 'OPEN_CURLY_BRACKET "{")
             (list 'SYMBOL "YYERROR")
             (list 'SEMICOLON ";")
-            (list 'CLOSE_SQUARE_BRACKET "}"))))
+            (list 'CLOSE_CURLY_BRACKET "}"))))
   (message "Passed lexer test: if block checking return value")
 
   (should (equal
@@ -401,6 +401,7 @@
             (list 'OPEN_PARENTHESIS "(")
             (list 'LOGICAL_NOT "!")
             (list 'OPEN_PARENTHESIS "(")
+            (list 'RETURN "$$")
             (list 'BITWISE_AND "&")
             (list 'SYMBOL "ZEND_ACC_PPP_MASK")
             (list 'CLOSE_PARENTHESIS ")")

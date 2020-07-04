@@ -260,11 +260,27 @@
           string
           start)
          start)
-        (push (list 'OPEN_SQUARE_BRACKET (match-string 0 string)) tokens)
+        (push (list 'OPEN_CURLY_BRACKET (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
           "}"
+          string
+          start)
+         start)
+        (push (list 'CLOSE_CURLY_BRACKET (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\\["
+          string
+          start)
+         start)
+        (push (list 'OPEN_SQUARE_BRACKET (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "\\]"
           string
           start)
          start)
@@ -325,6 +341,14 @@
           start)
          start)
         (push (list 'BITWISE_OR (match-string 0 string)) tokens)
+        (setq start (match-end 0)))
+       ((equal
+         (string-match
+          "&"
+          string
+          start)
+         start)
+        (push (list 'BITWISE_AND (match-string 0 string)) tokens)
         (setq start (match-end 0)))
        ((equal
          (string-match
