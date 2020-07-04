@@ -195,7 +195,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "$$ = $1; if (!($$ & ZEND_ACC_PPP_MASK)) { $$ |= ZEND_ACC_PUBLIC; } ")
-    "(let ((r)) (setq r $1)(if (not (and r 'ZEND_ACC_PPP_MASK)) (setq r (logical-or r 'ZEND_ACC_PUBLIC))))"))
+    "(let ((r)) (setq r $1)(if (not (logand r 'ZEND_ACC_PPP_MASK)) (setq r (logior r 'ZEND_ACC_PUBLIC))) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 12")
 
 

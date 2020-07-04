@@ -434,7 +434,7 @@
         (pcase token-id
           ('ADDITION
            (when in-subtraction
-             (signal 'error (list (format "Cannot combine subctractionwith addition in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack))))
+             (signal 'error (list (format "Cannot combine subctraction with addition in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack))))
            (unless in-subtraction
              (setq in-subtraction t)
              (setq
@@ -444,7 +444,7 @@
                first-token-value))))
           ('SUBTRACTION
            (when in-subtraction
-             (signal 'error (list (format "Cannot combine subctractionwith addition in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack))))
+             (signal 'error (list (format "Cannot combine subctraction with addition in token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack))))
            (unless in-subtraction
              (setq in-subtraction t)
              (setq
@@ -744,7 +744,7 @@
            (setq
             parenthesis-level
             (1- parenthesis-level)))
-          ('OPEN_SQUARE_BRACKET
+          ('OPEN_CURLY_BRACKET
            (push
             token
             emacs-wisent-grammar-converter-parser--tokens-stack)
@@ -770,11 +770,11 @@
              (token-id (car token))
              (token-value (car (cdr token))))
         (pcase token-id
-          ('OPEN_SQUARE_BRACKET
+          ('OPEN_CURLY_BRACKET
            (setq
             square-bracket-level
             (1+ square-bracket-level)))
-          ('CLOSE_SQUARE_BRACKET
+          ('CLOSE_CURLY_BRACKET
            (setq
             square-bracket-level
             (1- square-bracket-level))
@@ -932,8 +932,10 @@
   "Parse logical prefix expression OPERATOR in NAMESPACE."
   (let ((continue t)
         (return-string "")
+        (return-count 0)
         (variable "")
-        (parenthesis-level 0))
+        (parenthesis-level 0)
+        (previous-token nil))
     (while (and
             continue
             emacs-wisent-grammar-converter-parser--tokens-stack)
@@ -941,20 +943,50 @@
              (token-id (car token))
              (token-value (car (cdr token))))
         (pcase token-id
-          ((or 'VARIABLE RETURN SYMBOL FUNCTION STRING INTEGER RETURN)
-           (setq continue nil)
+          ('OPEN_PARENTHESIS
+           (setq parenthesis-level (1+ parenthesis-level)))
+          ('CLOSE_PARENTHESIS
+           (setq parenthesis-level (1- parenthesis-level))
+           (when (= parenthesis-level 0)
+             (setq continue nil)))
+          ((or 'BITWISE_OR 'BITWISE_AND 'ADDITION 'MULTIPLICATION 'SUBTRACTION 'DIVISION)
+           (push token emacs-wisent-grammar-converter-parser--tokens-stack)
+           (let ((infix-value (emacs-wisent-grammar-converter-parser--infix-token-value namespace previous-token)))
+             (message "Infix value of token '%s' is '%s'" token infix-value)
+             (when (= parenthesis-level 0)
+               (setq continue nil))
+             (unless (= return-count 0)
+               (setq
+                return-string
+                (concat
+                 return-string
+                 " ")))
+             (setq return-count (1+ return-count))
+             (setq
+              return-string
+              (concat
+               return-string
+               infix-value))))
+          ((or 'VARIABLE 'RETURN 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
+           (when (= parenthesis-level 0)
+             (setq continue nil))
+           (unless (= return-count 0)
+             (setq
+              return-string
+              (concat
+               return-string
+               " ")))
+           (setq return-count (1+ return-count))
            (setq
             return-string
             (concat
              return-string
-             (format
-              "(not %s)"
-              (emacs-wisent-grammar-converter-parser--token-value
-               namespace
-               token)))))
-          ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS))
-          (_ (signal 'error (list (format "Unexpected logical prefix token: %s" token)))))))
-    return-string))
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              token))))
+          (_ (signal 'error (list (format "Unexpected logical prefix token: %s" token)))))
+        (setq previous-token token)))
+    (format "(not %s)" return-string)))
 
 (provide 'emacs-wisent-grammar-converter-parser)
 ;;; emacs-wisent-grammar-converter-parser.el ends here

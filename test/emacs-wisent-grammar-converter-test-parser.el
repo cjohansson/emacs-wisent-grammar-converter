@@ -437,10 +437,10 @@
       (list 'LOGICAL_NOT "!")
       (list 'RETURN "$$")
       (list 'CLOSE_PARENTHESIS ")")
-      (list 'OPEN_SQUARE_BRACKET "{")
+      (list 'OPEN_CURLY_BRACKET "{")
       (list 'SYMBOL "yyerror")
       (list 'SEMICOLON ";")
-      (list 'CLOSE_SQUARE_BRACKET "}")))
+      (list 'CLOSE_CURLY_BRACKET "}")))
     "(let ((r)) (setq r (ZEND_ADD_CLASS_MODIFIER $1 $2))(if (not r) (setq r 'yyerror)) r)"))
   (message "Passed test: if statement with logical not")
 
@@ -523,6 +523,7 @@
       (list 'OPEN_PARENTHESIS "(")
       (list 'LOGICAL_NOT "!")
       (list 'OPEN_PARENTHESIS "(")
+      (list 'RETURN "$$")
       (list 'BITWISE_AND "&")
       (list 'SYMBOL "ZEND_ACC_PPP_MASK")
       (list 'CLOSE_PARENTHESIS ")")
@@ -532,9 +533,9 @@
       (list 'BITWISE_OR_ASSIGNMENT "|=")
       (list 'SYMBOL "ZEND_ACC_PUBLIC")
       (list 'SEMICOLON ";")
-      (list 'CLOSE_CURLY_BRACKET "}"))
-     "(let ((r)) (setq r $1)(if (not (bitwise-and r 'zend_acc_ppp_mask)) (setq r (bitwise-or r 'zend_acc_public))) r)")))
-   (message "Passed test: condition bitwise-and on return value")
+      (list 'CLOSE_CURLY_BRACKET "}")))
+    "(let ((r)) (setq r $1)(if (not (logand r 'ZEND_ACC_PPP_MASK)) (setq r (logior r 'ZEND_ACC_PUBLIC))) r)"))
+  (message "Passed test: condition bitwise-and on return value")
 
   )
 
