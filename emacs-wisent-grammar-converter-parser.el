@@ -32,7 +32,7 @@
 (defvar emacs-wisent-grammar-converter-parser--root-token-id nil
   "Current root token id.")
 
-(defun emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp (tokens &optional namespace)
+(defun emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp (tokens &optional namespace macro-list)
   "Convert Bison grammar TOKENS into emacs-lisp using parser for each statement."
   (setq emacs-wisent-grammar-converter-parser--tokens-stack tokens)
 
@@ -78,89 +78,105 @@
       return-string
       ") "))
 
-    (let ((last-token nil))
-      (while emacs-wisent-grammar-converter-parser--tokens-stack
-        (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-               (token-id (car token))
-               (token-value (car (cdr token))))
-          ;; (message "token %s, id: %s, value: %s" token token-id token-value)
-          (setq
-           emacs-wisent-grammar-converter-parser--root-token-id
-           token-id)
-          (pcase token-id
-            ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION))
-            ('POINTER
-             (unless (string= token-value "")
-               (setq
-                return-string
-                (concat
-                 return-string
-                 (emacs-wisent-grammar-converter-parser--variable token-value namespace)))))
-            ('FUNCTION
+    (while emacs-wisent-grammar-converter-parser--tokens-stack
+      (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
+             (token-id (car token))
+             (token-value (car (cdr token))))
+        ;; (message "token %s, id: %s, value: %s" token token-id token-value)
+        (setq
+         emacs-wisent-grammar-converter-parser--root-token-id
+         token-id)
+        (pcase token-id
+          ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS 'DECLARATION))
+          ('POINTER
+           (unless (string= token-value "")
              (setq
               return-string
               (concat
                return-string
-               (emacs-wisent-grammar-converter-parser--function token-value namespace))))
-            ('IF
-             (setq
-              return-string
-              (concat
-               return-string
-               (emacs-wisent-grammar-converter-parser--if namespace))))
-            ('SYMBOL
-             (setq
-              return-string
-              (concat
-               return-string
-               (format
-                "(setq r '%s%s)"
+               (emacs-wisent-grammar-converter-parser--variable
+                token-value
                 namespace
-                token-value))))
-            ('DOC_COMMENT
-             (setq
-              return-string
-              (concat
-               return-string
-               (format
-                ";; %s\n"
-                token-value))))
-            ('VARIABLE
-             (setq
-              return-string
-              (concat
-               return-string
-               (emacs-wisent-grammar-converter-parser--variable token-value namespace))))
-            ('PARAMETER
-             (setq
-              return-string
-              (concat
-               return-string
-               (emacs-wisent-grammar-converter-parser--parameter token-value namespace))))
-            ('RETURN
-             (setq
-              return-string
-              (concat
-               return-string
-               (emacs-wisent-grammar-converter-parser--return namespace))))
-            ('SEMICOLON)
-            (_ (signal 'error (list (format "Unexpected root token %s" token)))))
-          (setq last-token token))))
+                macro-list)))))
+          ('FUNCTION
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter-parser--function
+              token-value
+              namespace
+              macro-list))))
+          ('IF
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter-parser--if
+              namespace
+              macro-list))))
+          ('SYMBOL
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              "(setq r '%s%s)"
+              namespace
+              token-value))))
+          ('DOC_COMMENT
+           (setq
+            return-string
+            (concat
+             return-string
+             (format
+              ";; %s\n"
+              token-value))))
+          ('VARIABLE
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter-parser--variable
+              token-value
+              namespace
+              macro-list))))
+          ('PARAMETER
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter-parser--parameter
+              token-value
+              namespace
+              macro-list))))
+          ('RETURN
+           (setq
+            return-string
+            (concat
+             return-string
+             (emacs-wisent-grammar-converter-parser--return
+              namespace
+              macro-list))))
+          ('SEMICOLON)
+          (_ (signal 'error (list (format "Unexpected root token %s" token)))))))
 
     (format "%s r)" return-string)))
 
-(defun emacs-wisent-grammar-converter-parser--variable (name namespace)
+(defun emacs-wisent-grammar-converter-parser--variable (name namespace macro-list)
   "Parse variable NAME in NAMESPACE."
   (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-         (token-id (car token))
-         (token-value (car (cdr token))))
+         (token-id (car token)))
     (pcase token-id
       ('ASSIGNMENT
        (let ((formatted-name (concat namespace name)))
          (format
           "(setq %s %s)"
           formatted-name
-          (emacs-wisent-grammar-converter-parser--token-value namespace))))
+          (emacs-wisent-grammar-converter-parser--token-value
+           namespace
+           nil
+           macro-list))))
       ('SEMICOLON
        ;; A declaration has no equivalent in Emacs-Lisp
        "")
@@ -169,30 +185,36 @@
         "(semantic-tag-put-attribute %s%s '%s)"
         namespace
         name
-        (emacs-wisent-grammar-converter-parser--member-operator name namespace)))
+        (emacs-wisent-grammar-converter-parser--member-operator
+         name
+         namespace
+         macro-list)))
       (_ (signal 'error (list (format "Unexpected variable token %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack)))))))
 
-(defun emacs-wisent-grammar-converter-parser--parameter (name namespace)
+(defun emacs-wisent-grammar-converter-parser--parameter (name namespace macro-list)
   "Parse parameter NAME in NAMESPACE."
   (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-         (token-id (car token))
-         (token-value (car (cdr token))))
+         (token-id (car token)))
     (pcase token-id
       ('ASSIGNMENT
        (format
         "(setq %s %s)"
         name
-        (emacs-wisent-grammar-converter-parser--token-value namespace)))
+        (emacs-wisent-grammar-converter-parser--token-value
+         namespace
+         nil
+         macro-list)))
       ('MEMBER_OPERATOR
        (format
         "(semantic-tag-put-attribute %s %s)"
         name
         (emacs-wisent-grammar-converter-parser--member-operator
          name
-         namespace)))
+         namespace
+         macro-list)))
       (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
 
-(defun emacs-wisent-grammar-converter-parser--return (namespace)
+(defun emacs-wisent-grammar-converter-parser--return (namespace macro-list)
   "Parse return in NAMESPACE."
   (let ((return-string "")
         (continue t))
@@ -200,29 +222,37 @@
             continue
             emacs-wisent-grammar-converter-parser--tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-             (token-id (car token))
-             (token-value (car (cdr token))))
+             (token-id (car token)))
         (pcase token-id
           ('ASSIGNMENT
            (setq
             return-string
             (format
              "(setq r %s)"
-             (emacs-wisent-grammar-converter-parser--token-value namespace)))
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              nil
+              macro-list)))
            (setq continue nil))
           ('BITWISE_OR_ASSIGNMENT
            (setq
             return-string
             (format
              "(setq r (logior r %s))"
-             (emacs-wisent-grammar-converter-parser--token-value namespace)))
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              nil
+              macro-list)))
            (setq continue nil))
           ('BITWISE_AND_ASSIGNMENT
            (setq
             return-string
             (format
              "(setq r (logand r %s))"
-             (emacs-wisent-grammar-converter-parser--token-value namespace)))
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              nil
+              macro-list)))
            (setq continue nil))
           ((or 'OPEN_PARENTHESIS 'CLOSE_PARENTHESIS))
           ('MEMBER_OPERATOR
@@ -232,12 +262,13 @@
              "(semantic-tag-put-attribute r %s)"
              (emacs-wisent-grammar-converter-parser--member-operator
               "r"
-              namespace)))
+              namespace
+              macro-list)))
            (setq continue nil))
           (_ (signal 'error (list (format "Unexpected return token %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--function (name namespace)
+(defun emacs-wisent-grammar-converter-parser--function (name namespace macro-list)
   "Parse function NAME and NAMESPACE."
   ;; Skip first OPEN_PARENTHESIS token
   (pop emacs-wisent-grammar-converter-parser--tokens-stack)
@@ -249,90 +280,126 @@
     (while (and continue
                 emacs-wisent-grammar-converter-parser--tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-             (token-id (car token))
-             (token-value (car (cdr token))))
+             (token-id (car token)))
         (pcase token-id
           ('ASSIGNMENT
-           (unless closed
-             (signal 'err (list (format "Unexpected function assignment %s" token))))
-           (setq continue nil)
-           (if argument-string
-               (setq
-                return-string
-                (format
-                 "(%s '%s %s)"
-                 (upcase name)
-                 argument-string
-                 (emacs-wisent-grammar-converter-parser--token-value namespace)))
-             (setq
-              return-string
-              (format
-               "(%s %s)"
-               (upcase name)
-               (emacs-wisent-grammar-converter-parser--token-value namespace)))))
-          ('BITWISE_OR_ASSIGNMENT
-           (unless closed
-             (signal 'err (list (format "Unexpected function assignment %s" token))))
-           (setq continue nil)
-           (if argument-string
-               (setq
-                return-string
-                (format
-                 "(%s '%s (logior (%s%s '%s) %s))"
-                 (upcase name)
-                 argument-string
-                 (upcase namespace)
-                 (upcase name)
-                 argument-string
-                 (emacs-wisent-grammar-converter-parser--token-value namespace)))
-             (setq
-              return-string
-              (format
-               "(%s (logior (%s) %s))"
-               (upcase name)
-               (upcase name)
-               (emacs-wisent-grammar-converter-parser--token-value namespace)))))
-          ('BITWISE_AND_ASSIGNMENT
-           (unless closed
-             (signal 'err (list (format "Unexpected function assignment %s" token))))
-           (setq continue nil)
-           (if argument-string
-               (setq
-                return-string
-                (format
-                 "(%s '%s (logand (%s '%s) %s))"
-                 (upcase name)
-                 argument-string
-                 (upcase name)
-                 argument-string
-                 (emacs-wisent-grammar-converter-parser--token-value namespace)))
-             (setq
-              return-string
-              (format
-               "(%s (logand (%s) %s))"
-               (upcase name)
-               (upcase name)
-               (emacs-wisent-grammar-converter-parser--token-value namespace)))))
-          ('CLOSE_PARENTHESIS
-           (when closed
-             (push
-              token
-              emacs-wisent-grammar-converter-parser--tokens-stack)
-             (setq continue nil))
-           (unless closed
+           (let ((function-name (downcase (concat namespace name))))
+             (when (and
+                    macro-list
+                    (gethash name macro-list))
+               (setq function-name (upcase name)))
+             (unless closed
+               (signal 'err (list (format "Unexpected function assignment %s" token))))
+             (setq continue nil)
              (if argument-string
                  (setq
                   return-string
                   (format
-                   "(%s %s)"
-                   (upcase name)
-                   argument-string))
+                   "(%s '%s %s)"
+                   function-name
+                   argument-string
+                   (emacs-wisent-grammar-converter-parser--token-value
+                    namespace
+                    nil
+                    macro-list)))
                (setq
                 return-string
                 (format
-                 "(%s)"
-                 (upcase name))))
-             (setq closed t)))
+                 "(%s %s)"
+                 function-name
+                 (emacs-wisent-grammar-converter-parser--token-value
+                  namespace
+                  nil
+                  macro-list))))))
+          ('BITWISE_OR_ASSIGNMENT
+           (let ((function-name (downcase (concat namespace name))))
+             (when (and
+                    macro-list
+                    (gethash name macro-list))
+               (setq function-name (upcase name)))
+             (unless closed
+               (signal 'err (list (format "Unexpected function assignment %s" token))))
+             (setq continue nil)
+             (if argument-string
+                 (setq
+                  return-string
+                  (format
+                   "(%s '%s (logior (%s '%s) %s))"
+                   function-name
+                   argument-string
+                   function-name
+                   argument-string
+                   (emacs-wisent-grammar-converter-parser--token-value
+                    namespace
+                    nil
+                    macro-list)))
+               (setq
+                return-string
+                (format
+                 "(%s (logior (%s) %s))"
+                 function-name
+                 function-name
+                 (emacs-wisent-grammar-converter-parser--token-value
+                  namespace
+                  nil
+                  macro-list))))))
+          ('BITWISE_AND_ASSIGNMENT
+           (let ((function-name (downcase (concat namespace name))))
+             (when (and
+                    macro-list
+                    (gethash name macro-list))
+               (setq function-name (upcase name)))
+             (unless closed
+               (signal 'err (list (format "Unexpected function assignment %s" token))))
+             (setq continue nil)
+             (if argument-string
+                 (setq
+                  return-string
+                  (format
+                   "(%s '%s (logand (%s '%s) %s))"
+                   function-name
+                   argument-string
+                   function-name
+                   argument-string
+                   (emacs-wisent-grammar-converter-parser--token-value
+                    namespace
+                    nil
+                    macro-list)))
+               (setq
+                return-string
+                (format
+                 "(%s (logand (%s) %s))"
+                 function-name
+                 function-name
+                 (emacs-wisent-grammar-converter-parser--token-value
+                  namespace
+                  nil
+                  macro-list))))))
+          ('CLOSE_PARENTHESIS
+           (let ((function-name (downcase (concat namespace name))))
+             (when (and
+                    macro-list
+                    (gethash name macro-list))
+               (setq function-name (upcase name)))
+             (when closed
+               (push
+                token
+                emacs-wisent-grammar-converter-parser--tokens-stack)
+               (setq continue nil))
+             (unless closed
+               (if argument-string
+                   (setq
+                    return-string
+                    (format
+                     "(%s %s)"
+                     function-name
+                     argument-string))
+                 (setq
+                  return-string
+                  (format
+                   "(%s)"
+                   function-name)))
+               (setq closed t))))
           (_
            (if closed
                (progn
@@ -345,16 +412,17 @@
               emacs-wisent-grammar-converter-parser--tokens-stack)
              (setq
               argument-string
-              (emacs-wisent-grammar-converter-parser--function-arguments token namespace)))))))
+              (emacs-wisent-grammar-converter-parser--function-arguments
+               namespace
+               macro-list)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--function-arguments (token namespace)
+(defun emacs-wisent-grammar-converter-parser--function-arguments (namespace macro-list)
   "Parse function arguments starting at TOKEN with NAMESPACE."
   (let ((return-string "")
         (return-count 0)
         (continue t)
-        (bracket-level 1)
-        (in-ternary nil))
+        (bracket-level 1))
     (while (and continue
                 emacs-wisent-grammar-converter-parser--tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
@@ -366,7 +434,11 @@
           ('OPEN_PARENTHESIS
            (setq bracket-level (1+ bracket-level)))
           ((or 'VARIABLE 'FUNCTION 'PARAMETER 'SYMBOL 'NULL 'REFERENCE)
-           (let ((parsed-value (emacs-wisent-grammar-converter-parser--token-value namespace token)))
+           (let ((parsed-value
+                  (emacs-wisent-grammar-converter-parser--token-value
+                   namespace
+                   token
+                   macro-list)))
            (when (> return-count 0)
              (setq
               return-string
@@ -418,7 +490,7 @@
           (_ (signal 'error (list (format "Unexpected function arguments token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--infix-token-value (namespace first-token-value)
+(defun emacs-wisent-grammar-converter-parser--infix-token-value (namespace first-token-value macro-list)
   "Return infix value of first-token-value in NAMESPACE."
   (let ((return-string "")
         (continue t)
@@ -429,8 +501,7 @@
     (while (and continue
                 emacs-wisent-grammar-converter-parser--tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-             (token-id (car token))
-             (token-value (car (cdr token))))
+             (token-id (car token)))
         (pcase token-id
           ('ADDITION
            (when in-subtraction
@@ -475,7 +546,11 @@
           ((or 'VARIABLE 'PARAMETER 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
            (unless (or in-bitwise-or in-bitwise-and in-subtraction in-addition)
              (signal 'error (list (format "Unexpected infix token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack))))
-           (let ((parsed-token-value (emacs-wisent-grammar-converter-parser--token-value namespace token)))
+           (let ((parsed-token-value
+                  (emacs-wisent-grammar-converter-parser--token-value
+                   namespace
+                   token
+                   macro-list)))
              (setq
               return-string
               (concat
@@ -493,7 +568,7 @@
      (concat return-string ")"))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--token-value (namespace &optional token)
+(defun emacs-wisent-grammar-converter-parser--token-value (namespace &optional token macro-list)
   "Return TOKEN value."
   (let ((return-string ""))
     (unless token
@@ -555,29 +630,43 @@
         ('FUNCTION
          (setq
           return-string
-          (emacs-wisent-grammar-converter-parser--function token-value namespace)))
+          (emacs-wisent-grammar-converter-parser--function
+           token-value
+           namespace
+           macro-list)))
         (_ (signal 'error (list (format "Unexpected token value token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack))))))
 
     ;; Check next token here
     (when emacs-wisent-grammar-converter-parser--tokens-stack
       (let* ((next-token (car emacs-wisent-grammar-converter-parser--tokens-stack))
-             (next-token-id (car next-token))
-             (next-token-value (car (cdr next-token))))
+             (next-token-id (car next-token)))
         (pcase next-token-id
           ((or 'BITWISE_OR 'BITWISE_AND 'ADDITION 'MULTIPLICATION 'SUBTRACTION 'DIVISION)
-           (let ((infix-value (emacs-wisent-grammar-converter-parser--infix-token-value namespace return-string)))
+           (let ((infix-value
+                  (emacs-wisent-grammar-converter-parser--infix-token-value
+                   namespace
+                   return-string
+                   macro-list)))
              ;; (message "Infix value of token '%s' is '%s'" token infix-value)
              (setq
               return-string
               infix-value)))
           ('QUESTION_MARK
            (pop emacs-wisent-grammar-converter-parser--tokens-stack)
-           (let ((ternary-true (emacs-wisent-grammar-converter-parser--token-value namespace))
+           (let ((ternary-true
+                  (emacs-wisent-grammar-converter-parser--token-value
+                   namespace
+                   nil
+                   macro-list))
                  (ternary-false ""))
 
              ;; Pop the :
              (pop emacs-wisent-grammar-converter-parser--tokens-stack)
-             (setq ternary-false (emacs-wisent-grammar-converter-parser--token-value namespace))
+             (setq ternary-false
+                   (emacs-wisent-grammar-converter-parser--token-value
+                    namespace
+                    nil
+                    macro-list))
              (setq
               return-string
               (format
@@ -588,7 +677,7 @@
     return-string))
 
 ;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
-(defun emacs-wisent-grammar-converter-parser--member-operator (parent namespace)
+(defun emacs-wisent-grammar-converter-parser--member-operator (parent namespace macro-list)
   "Parse member-operator of PARENT using NAMESPACE."
   (let ((continue t)
         (return-string "")
@@ -617,7 +706,10 @@
               " (logior (semantic-tag-get-attribute %s '%s) "
               parent
               variable)
-             (emacs-wisent-grammar-converter-parser--token-value namespace)
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              nil
+              macro-list)
              ")"))
            (setq continue nil))
           ('BITWISE_AND_ASSIGNMENT
@@ -629,7 +721,10 @@
               " (logand (semantic-tag-get-attribute %s '%s) "
               parent
               variable)
-             (emacs-wisent-grammar-converter-parser--token-value namespace)
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              nil
+              macro-list)
              ")"))
            (setq continue nil))
           ('ASSIGNMENT
@@ -638,7 +733,10 @@
             (concat
              return-string
              " "
-             (emacs-wisent-grammar-converter-parser--token-value namespace)))
+             (emacs-wisent-grammar-converter-parser--token-value
+              namespace
+              nil
+              macro-list)))
            (setq continue nil))
           ('SEMICOLON
            (setq continue nil)
@@ -652,13 +750,12 @@
           (_ (signal 'error (list (format "Unexpected member-operator token: %s" token)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--if (namespace)
+(defun emacs-wisent-grammar-converter-parser--if (namespace macro-list)
   "Parser for IF statments in NAMESPACE."
   (let ((continue t)
         (condition-string "")
         (condition-subject-string "")
         (body-string "")
-        (variable "")
         (parenthesis-level 0))
     (while (and
             continue
@@ -674,7 +771,7 @@
              condition-string
              (emacs-wisent-grammar-converter-parser--logical-prefix
               namespace
-              token-id))))
+              macro-list))))
           ((or 'LOGICAL_OR 'LOGICAL_AND 'EQUAL 'LOGICAL_NOT_EQUAL 'LOGICAL_GREATER 'LOGICAL_LESSER 'LOGICAL_GREATER_OR_EQUAL 'LOGICAL_LESSER_OR_EQUAL)
            (setq
             condition-string
@@ -683,7 +780,8 @@
              (emacs-wisent-grammar-converter-parser--logical-infix
               condition-subject-string
               namespace
-              token-id))))
+              token-id
+              macro-list))))
           ((or 'PARAMETER 'RETURN)
            (if (= parenthesis-level 0)
                (progn
@@ -692,7 +790,9 @@
                   emacs-wisent-grammar-converter-parser--tokens-stack)
                  (setq
                   body-string
-                  (emacs-wisent-grammar-converter-parser--if-body-inline namespace))
+                  (emacs-wisent-grammar-converter-parser--if-body-inline
+                   namespace
+                   macro-list))
                  (setq continue nil))
              (let ((next-is-member-operator
                     (and
@@ -720,7 +820,8 @@
                   condition-subject-string
                   (emacs-wisent-grammar-converter-parser--token-value
                    namespace
-                   token))))))
+                   token
+                   macro-list))))))
           ((or 'VARIABLE 'SYMBOL 'FUNCTION 'STRING 'INTEGER)
            (if (= parenthesis-level 0)
                (progn
@@ -729,13 +830,16 @@
                   emacs-wisent-grammar-converter-parser--tokens-stack)
                  (setq
                   body-string
-                  (emacs-wisent-grammar-converter-parser--if-body-inline namespace))
+                  (emacs-wisent-grammar-converter-parser--if-body-inline
+                   namespace
+                   macro-list))
                  (setq continue nil))
              (setq
               condition-subject-string
               (emacs-wisent-grammar-converter-parser--token-value
                namespace
-               token))))
+               token
+               macro-list))))
           ('OPEN_PARENTHESIS
            (setq
             parenthesis-level
@@ -750,7 +854,9 @@
             emacs-wisent-grammar-converter-parser--tokens-stack)
            (setq
             body-string
-            (emacs-wisent-grammar-converter-parser--if-body namespace))
+            (emacs-wisent-grammar-converter-parser--if-body
+             namespace
+             macro-list))
            (setq continue nil))
           (_ (signal 'error (list (format "Unexpected if-operator token: %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack)))))))
     (format
@@ -758,7 +864,7 @@
      condition-string
      body-string)))
 
-(defun emacs-wisent-grammar-converter-parser--if-body (namespace)
+(defun emacs-wisent-grammar-converter-parser--if-body (namespace macro-list)
   "Parse IF-body in NAMESPACE."
   (let ((return-string "")
         (continue t)
@@ -787,19 +893,27 @@
               return-string
               (concat
                return-string
-               (emacs-wisent-grammar-converter-parser--variable token-value namespace)))))
+               (emacs-wisent-grammar-converter-parser--variable
+                token-value
+                namespace
+                macro-list)))))
           ('FUNCTION
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--function token-value namespace))))
+             (emacs-wisent-grammar-converter-parser--function
+              token-value
+              namespace
+              macro-list))))
           ('IF
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--if namespace))))
+             (emacs-wisent-grammar-converter-parser--if
+              namespace
+              macro-list))))
           ('SYMBOL
            (setq
             return-string
@@ -814,24 +928,32 @@
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--variable token-value namespace))))
+             (emacs-wisent-grammar-converter-parser--variable
+              token-value
+              namespace
+              macro-list))))
           ('PARAMETER
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--parameter token-value namespace))))
+             (emacs-wisent-grammar-converter-parser--parameter
+              token-value
+              namespace
+              macro-list))))
           ('RETURN
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--return namespace))))
+             (emacs-wisent-grammar-converter-parser--return
+              namespace
+              macro-list))))
           ('SEMICOLON)
           (_ (signal 'error (list (format "Unexpected if-body token %s" token)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--if-body-inline (namespace)
+(defun emacs-wisent-grammar-converter-parser--if-body-inline (namespace macro-list)
   "Parse IF-body-inline in NAMESPACE."
   (let ((return-string "")
         (continue t))
@@ -851,19 +973,27 @@
               return-string
               (concat
                return-string
-               (emacs-wisent-grammar-converter-parser--variable token-value namespace)))))
+               (emacs-wisent-grammar-converter-parser--variable
+                token-value
+                namespace
+                macro-list)))))
           ('FUNCTION
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--function token-value namespace))))
+             (emacs-wisent-grammar-converter-parser--function
+              token-value
+              namespace
+              macro-list))))
           ('IF
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--if namespace))))
+             (emacs-wisent-grammar-converter-parser--if
+              namespace
+              macro-list))))
           ('SYMBOL
            (setq
             return-string
@@ -878,29 +1008,35 @@
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--variable token-value namespace))))
+             (emacs-wisent-grammar-converter-parser--variable
+              token-value
+              namespace
+              macro-list))))
           ('PARAMETER
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--parameter token-value namespace))))
+             (emacs-wisent-grammar-converter-parser--parameter
+              token-value
+              namespace
+              macro-list))))
           ('RETURN
            (setq
             return-string
             (concat
              return-string
-             (emacs-wisent-grammar-converter-parser--return namespace))))
+             (emacs-wisent-grammar-converter-parser--return
+              namespace
+              macro-list))))
           ('SEMICOLON)
           (_ (signal 'error (list (format "Unexpected if-body-inline token %s" token)))))))
     return-string))
 
-(defun emacs-wisent-grammar-converter-parser--logical-infix (subject-string namespace operator)
+(defun emacs-wisent-grammar-converter-parser--logical-infix (subject-string namespace operator macro-list)
   "Parse logical infix between SUBJECT with infix in NAMESPACE"
-  (let ((continue t)
-        (return-string "")
-        (variable "")
-        (parenthesis-level 0)
+  (let ((subject2-string)
+        (continue t)
         (operator-string ""))
     (pcase operator
       ('EQUAL (setq operator-string "equal"))
@@ -911,15 +1047,15 @@
             continue
             emacs-wisent-grammar-converter-parser--tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-             (token-id (car token))
-             (token-value (car (cdr token))))
+             (token-id (car token)))
         (pcase token-id
           ((or 'PARAMETER 'VARIABLE 'RETURN 'INTEGER 'STRING 'SYMBOL)
            (setq
             subject2-string
             (emacs-wisent-grammar-converter-parser--token-value
              namespace
-             token))
+             token
+             macro-list))
            (setq continue nil))
           (_ (signal 'error (list (format "Unexpected logical infix  token %s" token)))))))
     (format
@@ -928,20 +1064,18 @@
      subject-string
      subject2-string)))
 
-(defun emacs-wisent-grammar-converter-parser--logical-prefix (namespace operator)
+(defun emacs-wisent-grammar-converter-parser--logical-prefix (namespace macro-list)
   "Parse logical prefix expression OPERATOR in NAMESPACE."
   (let ((continue t)
         (return-string "")
         (return-count 0)
-        (variable "")
         (parenthesis-level 0)
         (previous-token nil))
     (while (and
             continue
             emacs-wisent-grammar-converter-parser--tokens-stack)
       (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
-             (token-id (car token))
-             (token-value (car (cdr token))))
+             (token-id (car token)))
         (pcase token-id
           ('OPEN_PARENTHESIS
            (setq parenthesis-level (1+ parenthesis-level)))
@@ -951,7 +1085,11 @@
              (setq continue nil)))
           ((or 'BITWISE_OR 'BITWISE_AND 'ADDITION 'MULTIPLICATION 'SUBTRACTION 'DIVISION)
            (push token emacs-wisent-grammar-converter-parser--tokens-stack)
-           (let ((infix-value (emacs-wisent-grammar-converter-parser--infix-token-value namespace previous-token)))
+           (let ((infix-value
+                  (emacs-wisent-grammar-converter-parser--infix-token-value
+                   namespace
+                   previous-token
+                   macro-list)))
              (message "Infix value of token '%s' is '%s'" token infix-value)
              (when (= parenthesis-level 0)
                (setq continue nil))
@@ -983,7 +1121,8 @@
              return-string
              (emacs-wisent-grammar-converter-parser--token-value
               namespace
-              token))))
+              token
+              macro-list))))
           (_ (signal 'error (list (format "Unexpected logical prefix token: %s" token)))))
         (setq previous-token token)))
     (format "(not %s)" return-string)))

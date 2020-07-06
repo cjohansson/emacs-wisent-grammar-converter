@@ -39,10 +39,10 @@
 (require 'emacs-wisent-grammar-converter-lexer)
 (require 'emacs-wisent-grammar-converter-parser)
 
-(defun emacs-wisent-grammar-converter--reformat-logic-block (string &optional namespace)
-  "Lex and then parse STRING into Emacs Lisp, use optional NAMESPACE if specified."
+(defun emacs-wisent-grammar-converter--reformat-logic-block (string &optional namespace macro-list)
+  "Lex and then parse STRING into Emacs Lisp, use optional NAMESPACE if specified.  If specified MACRO-LIST contain functions that are macros and does not need prefix."
   (let ((tokens (emacs-wisent-grammar-converter-lexer--lex-c-string string)))
-    (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp tokens namespace)))
+    (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp tokens namespace macro-list)))
 
 (defun emacs-wisent-grammar-converter--string-trim (string)
   "Trim STRING from white-space."
@@ -56,7 +56,7 @@
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
-(defun emacs-wisent-grammar-convert--parse-buffer (buffer &optional header-string prefix terminal-replacements)
+(defun emacs-wisent-grammar-convert--parse-buffer (buffer &optional header-string prefix terminal-replacements macro-list)
   "Convert buffer grammar, prepend HEADER-string if specified, use PREFIX if specified.  Return the conversion as a string."
   (switch-to-buffer buffer)
 
@@ -180,7 +180,7 @@
                     (setq logic (buffer-substring logic-start (- logic-end 1)))
 
                     (message "Found logic contents: '%s'" logic)
-                    (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic prefix))
+                    (setq logic (emacs-wisent-grammar-converter--reformat-logic-block logic prefix macro-list))
                     (message "Reformatted logic into '%s'" logic)
                     (setq rule (concat rule " " logic)))
 
@@ -293,7 +293,7 @@
     ;; Return current buffer as string
     (buffer-string)))
 
-(defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header-file prefix terminal-replacements)
+(defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header-file prefix terminal-replacements macro-list)
   "Convert grammar in SOURCE to DESTINATION, prepend HEADER-FILE if specified, use PREFIX if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer "*Converted Grammar*"))
          (header-string))
@@ -306,7 +306,7 @@
         (setq header-string (buffer-string))))
 
     (let ((buffer-string
-           (emacs-wisent-grammar-convert--parse-buffer buffer header-string prefix terminal-replacements)))
+           (emacs-wisent-grammar-convert--parse-buffer buffer header-string prefix terminal-replacements macro-list)))
       (write-file destination)
       (kill-buffer)
       buffer-string)))

@@ -39,18 +39,55 @@
              (list 'OPEN_PARENTHESIS "(")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (MASK) r)"))
-  (message "Passed test: function-call without arguments")
+           "(let ((r)) (mask) r)"))
+  (message "Passed test: function-call without arguments without namespace")
 
   (should (equal
            (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp
             (list
              (list 'FUNCTION "mask")
              (list 'OPEN_PARENTHESIS "(")
+             (list 'CLOSE_PARENTHESIS ")")
+             (list 'SEMICOLON ";"))
+            "random-")
+           "(let ((r)) (random-mask) r)"))
+  (message "Passed test: function-call without arguments with namespace")
+
+  (let ((macro-list (make-hash-table :test 'equal)))
+    (puthash "mask" t macro-list)
+    (should (equal
+             (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp
+              (list
+               (list 'FUNCTION "mask")
+               (list 'OPEN_PARENTHESIS "(")
+               (list 'CLOSE_PARENTHESIS ")")
+               (list 'SEMICOLON ";"))
+              nil
+              macro-list)
+             "(let ((r)) (MASK) r)"))
+    (message "Passed test: function-call via macro without namespace without arguments")
+
+    (should (equal
+             (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp
+              (list
+               (list 'FUNCTION "mask")
+               (list 'OPEN_PARENTHESIS "(")
+               (list 'CLOSE_PARENTHESIS ")")
+               (list 'SEMICOLON ";"))
+              "random-"
+              macro-list)
+             "(let ((r)) (MASK) r)"))
+    (message "Passed test: function-call via macro with namespace without arguments"))
+
+  (should (equal
+           (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp
+            (list
+             (list 'FUNCTION "MASK")
+             (list 'OPEN_PARENTHESIS "(")
              (list 'VARIABLE "zv")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (MASK zv) r)"))
+           "(let ((r)) (mask zv) r)"))
   (message "Passed test: function-call with one argument")
 
   (should (equal
@@ -62,7 +99,7 @@
              (list 'PARAMETER "$2")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (MASK zv $2) r)"))
+           "(let ((r)) (mask zv $2) r)"))
   (message "Passed test: function-call with two arguments")
 
   (should (equal
@@ -80,7 +117,7 @@
              (list 'VARIABLE "zv3")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (MASK (MASK2 zv zv2) zv3) r)"))
+           "(let ((r)) (mask (mask2 zv zv2) zv3) r)"))
   (message "Passed test: nested function calls")
 
   (should (equal
@@ -92,7 +129,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";"))
             "namespace-")
-           "(let ((r)) (MASK namespace-zv) r)"))
+           "(let ((r)) (namespace-mask namespace-zv) r)"))
   (message "Passed test: function-call with argument and namespace")
 
   (should (equal
@@ -127,7 +164,7 @@
              (list 'PARAMETER "$3")
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           "(let ((r)) (setq r (ZEND_AST_APPEND_STR $1 $3)) r)"))
+           "(let ((r)) (setq r (zend_ast_append_str $1 $3)) r)"))
   (message "Passed test: assign return-value function-call with parameter arguments")
 
   (should (equal
@@ -186,7 +223,7 @@
              (list 'ASSIGNMENT "=")
              (list 'PARAMETER "$9")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (CG 'extra_fn_flags $9) r)"))
+           "(let ((r)) (cg 'extra_fn_flags $9) r)"))
   (message "Passed test: set function-value via assignment")
 
   ;; CG(extra_fn_flags) |= ZEND_ACC_GENERATOR;
@@ -200,7 +237,7 @@
              (list 'BITWISE_OR_ASSIGNMENT "|=")
              (list 'SYMBOL "zend_acc_generator")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (CG 'extra_fn_flags (logior (CG 'extra_fn_flags) 'zend_acc_generator)) r)"))
+           "(let ((r)) (cg 'extra_fn_flags (logior (cg 'extra_fn_flags) 'zend_acc_generator)) r)"))
   (message "Passed test: set function-value via bitwise-or-assignment")
 
   ;; CG(extra_fn_flags) &= ZEND_ACC_GENERATOR;
@@ -214,7 +251,7 @@
              (list 'BITWISE_AND_ASSIGNMENT "|=")
              (list 'SYMBOL "zend_acc_generator")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (CG 'extra_fn_flags (logand (CG 'extra_fn_flags) 'zend_acc_generator)) r)"))
+           "(let ((r)) (cg 'extra_fn_flags (logand (cg 'extra_fn_flags) 'zend_acc_generator)) r)"))
   (message "Passed test: set function-value via bitwise-and-assignment")
 
   ;; $$ |= ZEND_ACC_PUBLIC;
@@ -253,7 +290,7 @@
              (list 'PARAMETER "$13")
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           "(let ((r)) (setq r (ZEND_AST_CREATE_DECL 'zend_ast_closure (logior $2 $13))) r)"))
+           "(let ((r)) (setq r (zend_ast_create_decl 'zend_ast_closure (logior $2 $13))) r)"))
   (message "Passed test: bitwise-or on function arguments")
 
   (should (equal
@@ -270,7 +307,7 @@
              (list 'PARAMETER "$13")
              (list 'CLOSE_PARENTHESIS)
              (list 'SEMICOLON ";")))
-           "(let ((r)) (setq r (ZEND_AST_CREATE_DECL 'zend_ast_closure (logand $2 $13))) r)"))
+           "(let ((r)) (setq r (zend_ast_create_decl 'zend_ast_closure (logand $2 $13))) r)"))
   (message "Passed test: bitwise-and on function arguments")
 
   (should (equal
@@ -298,7 +335,7 @@
              (list 'CLOSE_PARENTHESIS ")")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((r)) (setq r (ZEND_AST_CREATE 'zend_ast_prop_elem $1 nil (if $2 (ZEND_AST_CREATE_ZVAL_FROM_STR $2) nil))) r)"))
+           "(let ((r)) (setq r (zend_ast_create 'zend_ast_prop_elem $1 nil (if $2 (zend_ast_create_zval_from_str $2) nil))) r)"))
   (message "Passed test: ternary expression in function arguments")
   ;; { $$ = zend_ast_create(ZEND_AST_PROP_ELEM, $1, NULL, ($2 ? zend_ast_create_zval_from_str($2) : NULL)); }
 
@@ -363,7 +400,7 @@
              (list 'PARAMETER "$3")
              (list 'CLOSE_PARENTHESIS ")")
              (list 'SEMICOLON ";")))
-           "(let ((r)(decl)) (setq decl (ZEND_AST_CREATE_DECL 'zend_ast_class 'zend_acc_anon_class $2 $6 nil $4 $5 $8 nil))(setq r (ZEND_AST_CREATE 'zend_ast_new decl $3)) r)"))
+           "(let ((r)(decl)) (setq decl (zend_ast_create_decl 'zend_ast_class 'zend_acc_anon_class $2 $6 nil $4 $5 $8 nil))(setq r (zend_ast_create 'zend_ast_new decl $3)) r)"))
   (message "Passed test: de-referenced variable second test")
   ;; {
   ;; 	zend_ast *decl = zend_ast_create_decl(
@@ -394,7 +431,7 @@
       (list 'OPEN_PARENTHESIS "(")
       (list 'CLOSE_PARENTHESIS ")")
       (list 'SEMICOLON ";")))
-    "(let ((r)) (setq r (ZEND_AST_CREATE 'zend_ast_halt_compiler (ZEND_AST_CREATE_ZVAL_FROM_LONG (ZEND_GET_SCANNED_FILE_OFFSET))))(ZEND_STOP_LEXING) r)"))
+    "(let ((r)) (setq r (zend_ast_create 'zend_ast_halt_compiler (zend_ast_create_zval_from_long (zend_get_scanned_file_offset))))(zend_stop_lexing) r)"))
   (message "Passed test: assignment with nested function calls without arguments")
 
   (should
@@ -416,7 +453,7 @@
       (list 'REFERENCE "zv")
       (list 'CLOSE_PARENTHESIS ")")
       (list 'SEMICOLON ";")))
-    "(let ((r)(zv)) (ZEND_LEX_TSTRING (lambda(return) (setq zv return)))(setq r (ZEND_AST_CREATE_ZVAL zv)) r)"))
+    "(let ((r)(zv)) (zend_lex_tstring (lambda(return) (setq zv return)))(setq r (zend_ast_create_zval zv)) r)"))
   (message "Passed test: function call with referenced variable")
 
   (should
@@ -441,7 +478,7 @@
       (list 'SYMBOL "yyerror")
       (list 'SEMICOLON ";")
       (list 'CLOSE_CURLY_BRACKET "}")))
-    "(let ((r)) (setq r (ZEND_ADD_CLASS_MODIFIER $1 $2))(if (not r) (setq r 'yyerror)) r)"))
+    "(let ((r)) (setq r (zend_add_class_modifier $1 $2))(if (not r) (setq r 'yyerror)) r)"))
   (message "Passed test: if statement with logical not")
 
   (should
@@ -457,7 +494,7 @@
       (list 'CLOSE_PARENTHESIS ")")
       (list 'SEMICOLON ";")))
     "(let ((r)) ;; allow single trailing comma
-(setq r (ZEND_AST_LIST_RTRIM $1)) r)"))
+(setq r (zend_ast_list_rtrim $1)) r)"))
   (message "Passed test: code starting with doc comment")
 
   (should
@@ -508,7 +545,7 @@
       (list 'ASSIGNMENT "=")
       (list 'PARAMETER "$9")
       (list 'SEMICOLON ";")))
-    "(let ((r)) (setq r (ZEND_AST_CREATE_DECL 'zend_ast_closure (logior $2 $13) $1 $3 (ZEND_STRING_INIT \"{closure}\" (- (SIZEOF \"{closure}\") 1) 0) $5 $7 $11 $8))(CG 'extra_fn_flags $9) r)"))
+    "(let ((r)) (setq r (zend_ast_create_decl 'zend_ast_closure (logior $2 $13) $1 $3 (zend_string_init \"{closure}\" (- (sizeof \"{closure}\") 1) 0) $5 $7 $11 $8))(cg 'extra_fn_flags $9) r)"))
   (message "Passed test: subtraction of function return in function arguments")
 
   (should

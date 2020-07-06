@@ -66,17 +66,18 @@
      "\nrandom prefix stuff\n")
     "random prefix stuff\n\n\n;; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nreserved_non_modifiers:\n    T_INCLUDE\n    | T_INCLUDE_ONCE\n    | T_EVAL\n    | T_REQUIRE\n    | T_REQUIRE_ONCE\n    | T_LOGICAL_OR\n    | T_LOGICAL_XOR\n    | T_LOGICAL_AND\n    | T_INSTANCEOF\n    | T_NEW\n    | T_CLONE\n    | T_EXIT\n    | T_IF\n    | T_ELSEIF\n    | T_ELSE\n    | T_ENDIF\n    | T_ECHO\n    | T_DO\n    | T_WHILE\n    | T_ENDWHILE\n    | T_FOR\n    | T_ENDFOR\n    | T_FOREACH\n    | T_ENDFOREACH\n    | T_DECLARE\n    | T_ENDDECLARE\n    | T_AS\n    | T_TRY\n    | T_CATCH\n    | T_FINALLY\n    | T_THROW\n    | T_USE\n    | T_INSTEADOF\n    | T_GLOBAL\n    | T_VAR\n    | T_UNSET\n    | T_ISSET\n    | T_EMPTY\n    | T_CONTINUE\n    | T_GOTO\n    | T_FUNCTION\n    | T_CONST\n    | T_RETURN\n    | T_PRINT\n    | T_YIELD\n    | T_LIST\n    | T_SWITCH\n    | T_ENDSWITCH\n    | T_CASE\n    | T_DEFAULT\n    | T_BREAK\n    | T_ARRAY\n    | T_CALLABLE\n    | T_EXTENDS\n    | T_IMPLEMENTS\n    | T_NAMESPACE\n    | T_TRAIT\n    | T_INTERFACE\n    | T_CLASS\n    | T_CLASS_C\n    | T_TRAIT_C\n    | T_FUNC_C\n    | T_METHOD_C\n    | T_LINE\n    | T_FILE\n    | T_DIR\n    | T_NS_C\n    | T_FN\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
     ))
-  (message "Passed whole file test with prefix")
+  (message "Passed whole file test with header")
 
 
   ;; TODO Test prefix
   ;; TODO Test terminal-replacements
+  ;; TODO Test with macro-list
 
   (should
    (equal
     (emacs-wisent-grammar-converter-test--parse-string
      "\n\n%%\n\nclass_declaration_statement:\n		class_modifiers T_CLASS { $<num>$ = CG(zend_lineno); }\n		T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}'\n			{ $$ = zend_ast_create_decl(ZEND_AST_CLASS, $1, $<num>3, $7, zend_ast_get_str($4), $5, $6, $9, NULL); }\n	|	T_CLASS { $<num>$ = CG(zend_lineno); }\n		T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}'\n			{ $$ = zend_ast_create_decl(ZEND_AST_CLASS, 0, $<num>2, $6, zend_ast_get_str($3), $4, $5, $8, NULL); }\n;\n\n\n%%\n")
-    ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nclass_declaration_statement:\n    class_modifiers T_CLASS (let ((r)) (setq r (CG zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_CLASS $1 $3 $7 (ZEND_AST_GET_STR $4) $5 $6 $9 nil)) r)\n    | T_CLASS (let ((r)) (setq r (CG zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_CLASS 0 $2 $6 (ZEND_AST_GET_STR $3) $4 $5 $8 nil)) r)\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
+    ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nclass_declaration_statement:\n    class_modifiers T_CLASS (let ((r)) (setq r (cg zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (zend_ast_create_decl 'ZEND_AST_CLASS $1 $3 $7 (zend_ast_get_str $4) $5 $6 $9 nil)) r)\n    | T_CLASS (let ((r)) (setq r (cg zend_lineno)) r) T_STRING extends_from implements_list backup_doc_comment '{' class_statement_list '}' (let ((r)) (setq r (zend_ast_create_decl 'ZEND_AST_CLASS 0 $2 $6 (zend_ast_get_str $3) $4 $5 $8 nil)) r)\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
     ))
   (message "Passed whole file test with multiple logic blocks in a rule")
 
@@ -84,7 +85,7 @@
    (equal
     (emacs-wisent-grammar-converter-test--parse-string
      "\n\n%%\n\nstatement:\n		'{' inner_statement_list '}' { $$ = $2; }\n	|	if_stmt { $$ = $1; }\n	|	alt_if_stmt { $$ = $1; }\n	|	T_WHILE '(' expr ')' while_statement\n			{ $$ = zend_ast_create(ZEND_AST_WHILE, $3, $5); }\n	|	T_DO statement T_WHILE '(' expr ')' ';'\n			{ $$ = zend_ast_create(ZEND_AST_DO_WHILE, $2, $5); }\n	|	T_FOR '(' for_exprs ';' for_exprs ';' for_exprs ')' for_statement\n			{ $$ = zend_ast_create(ZEND_AST_FOR, $3, $5, $7, $9); }\n	|	T_SWITCH '(' expr ')' switch_case_list\n			{ $$ = zend_ast_create(ZEND_AST_SWITCH, $3, $5); }\n	|	T_BREAK optional_expr ';'		{ $$ = zend_ast_create(ZEND_AST_BREAK, $2); }\n	|	T_CONTINUE optional_expr ';'	{ $$ = zend_ast_create(ZEND_AST_CONTINUE, $2); }\n	|	T_RETURN optional_expr ';'		{ $$ = zend_ast_create(ZEND_AST_RETURN, $2); }\n	|	T_GLOBAL global_var_list ';'	{ $$ = $2; }\n	|	T_STATIC static_var_list ';'	{ $$ = $2; }\n	|	T_ECHO echo_expr_list ';'		{ $$ = $2; }\n	|	T_INLINE_HTML { $$ = zend_ast_create(ZEND_AST_ECHO, $1); }\n	|	expr ';' { $$ = $1; }\n	|	T_UNSET '(' unset_variables possible_comma ')' ';' { $$ = $3; }\n	|	T_FOREACH '(' expr T_AS foreach_variable ')' foreach_statement\n			{ $$ = zend_ast_create(ZEND_AST_FOREACH, $3, $5, NULL, $7); }\n	|	T_FOREACH '(' expr T_AS foreach_variable T_DOUBLE_ARROW foreach_variable ')'\n		foreach_statement\n			{ $$ = zend_ast_create(ZEND_AST_FOREACH, $3, $7, $5, $9); }\n	|	T_DECLARE '(' const_list ')'\n			{ if (!zend_handle_encoding_declaration($3)) { YYERROR; } }\n		declare_statement\n			{ $$ = zend_ast_create(ZEND_AST_DECLARE, $3, $6); }\n	|	';'	/* empty statement */ { $$ = NULL; }\n	|	T_TRY '{' inner_statement_list '}' catch_list finally_statement\n			{ $$ = zend_ast_create(ZEND_AST_TRY, $3, $5, $6); }\n	|	T_GOTO T_STRING ';' { $$ = zend_ast_create(ZEND_AST_GOTO, $2); }\n	|	T_STRING ':' { $$ = zend_ast_create(ZEND_AST_LABEL, $1); }\n;\n\n\n\n%%\n")
-    ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nstatement:\n    '{' inner_statement_list '}' (let ((r)) (setq r $2) r)\n    | if_stmt (let ((r)) (setq r $1) r)\n    | alt_if_stmt (let ((r)) (setq r $1) r)\n    | T_WHILE '(' expr ')' while_statement (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_WHILE $3 $5)) r)\n    | T_DO statement T_WHILE '(' expr ')' ';' (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_DO_WHILE $2 $5)) r)\n    | T_FOR '(' for_exprs ';' for_exprs ';' for_exprs ')' for_statement (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_FOR $3 $5 $7 $9)) r)\n    | T_SWITCH '(' expr ')' switch_case_list (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_SWITCH $3 $5)) r)\n    | T_BREAK optional_expr ';' (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_BREAK $2)) r)\n    | T_CONTINUE optional_expr ';' (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_CONTINUE $2)) r)\n    | T_RETURN optional_expr ';' (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_RETURN $2)) r)\n    | T_GLOBAL global_var_list ';' (let ((r)) (setq r $2) r)\n    | T_STATIC static_var_list ';' (let ((r)) (setq r $2) r)\n    | T_ECHO echo_expr_list ';' (let ((r)) (setq r $2) r)\n    | T_INLINE_HTML (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_ECHO $1)) r)\n    | expr ';' (let ((r)) (setq r $1) r)\n    | T_UNSET '(' unset_variables possible_comma ')' ';' (let ((r)) (setq r $3) r)\n    | T_FOREACH '(' expr T_AS foreach_variable ')' foreach_statement (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_FOREACH $3 $5 nil $7)) r)\n    | T_FOREACH '(' expr T_AS foreach_variable T_DOUBLE_ARROW foreach_variable ')' foreach_statement (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_FOREACH $3 $7 $5 $9)) r)\n    | T_DECLARE '(' const_list ')' (let ((r)) (if (not (ZEND_HANDLE_ENCODING_DECLARATION $3)) (setq r 'YYERROR)) r) declare_statement (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_DECLARE $3 $6)) r)\n    | ';' ;; empty statement (let ((r)) (setq r nil) r)\n    | T_TRY '{' inner_statement_list '}' catch_list finally_statement (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_TRY $3 $5 $6)) r)\n    | T_GOTO T_STRING ';' (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_GOTO $2)) r)\n    | T_STRING ':' (let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_LABEL $1)) r)\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
+    ";; NOTE Generated grammar starts here\n\n%%\n\n%empty:\n    ()\n    ;\n\n\nstatement:\n    '{' inner_statement_list '}' (let ((r)) (setq r $2) r)\n    | if_stmt (let ((r)) (setq r $1) r)\n    | alt_if_stmt (let ((r)) (setq r $1) r)\n    | T_WHILE '(' expr ')' while_statement (let ((r)) (setq r (zend_ast_create 'ZEND_AST_WHILE $3 $5)) r)\n    | T_DO statement T_WHILE '(' expr ')' ';' (let ((r)) (setq r (zend_ast_create 'ZEND_AST_DO_WHILE $2 $5)) r)\n    | T_FOR '(' for_exprs ';' for_exprs ';' for_exprs ')' for_statement (let ((r)) (setq r (zend_ast_create 'ZEND_AST_FOR $3 $5 $7 $9)) r)\n    | T_SWITCH '(' expr ')' switch_case_list (let ((r)) (setq r (zend_ast_create 'ZEND_AST_SWITCH $3 $5)) r)\n    | T_BREAK optional_expr ';' (let ((r)) (setq r (zend_ast_create 'ZEND_AST_BREAK $2)) r)\n    | T_CONTINUE optional_expr ';' (let ((r)) (setq r (zend_ast_create 'ZEND_AST_CONTINUE $2)) r)\n    | T_RETURN optional_expr ';' (let ((r)) (setq r (zend_ast_create 'ZEND_AST_RETURN $2)) r)\n    | T_GLOBAL global_var_list ';' (let ((r)) (setq r $2) r)\n    | T_STATIC static_var_list ';' (let ((r)) (setq r $2) r)\n    | T_ECHO echo_expr_list ';' (let ((r)) (setq r $2) r)\n    | T_INLINE_HTML (let ((r)) (setq r (zend_ast_create 'ZEND_AST_ECHO $1)) r)\n    | expr ';' (let ((r)) (setq r $1) r)\n    | T_UNSET '(' unset_variables possible_comma ')' ';' (let ((r)) (setq r $3) r)\n    | T_FOREACH '(' expr T_AS foreach_variable ')' foreach_statement (let ((r)) (setq r (zend_ast_create 'ZEND_AST_FOREACH $3 $5 nil $7)) r)\n    | T_FOREACH '(' expr T_AS foreach_variable T_DOUBLE_ARROW foreach_variable ')' foreach_statement (let ((r)) (setq r (zend_ast_create 'ZEND_AST_FOREACH $3 $7 $5 $9)) r)\n    | T_DECLARE '(' const_list ')' (let ((r)) (if (not (zend_handle_encoding_declaration $3)) (setq r 'YYERROR)) r) declare_statement (let ((r)) (setq r (zend_ast_create 'ZEND_AST_DECLARE $3 $6)) r)\n    | ';' ;; empty statement (let ((r)) (setq r nil) r)\n    | T_TRY '{' inner_statement_list '}' catch_list finally_statement (let ((r)) (setq r (zend_ast_create 'ZEND_AST_TRY $3 $5 $6)) r)\n    | T_GOTO T_STRING ';' (let ((r)) (setq r (zend_ast_create 'ZEND_AST_GOTO $2)) r)\n    | T_STRING ':' (let ((r)) (setq r (zend_ast_create 'ZEND_AST_LABEL $1)) r)\n    ;\n\n\n%%\n\n;; NOTE Generated grammar ends here"
     ))
   (message "Passed whole file test with multiple logic blocks in rule 2")
 
@@ -100,7 +101,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "$$ = zend_ast_append_str($1, $3);")
-    "(let ((r)) (setq r (ZEND_AST_APPEND_STR $1 $3)) r)"
+    "(let ((r)) (setq r (zend_ast_append_str $1 $3)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 1")
 
@@ -110,7 +111,7 @@
      "$$ = zend_ast_create(ZEND_AST_HALT_COMPILER,
 			      zend_ast_create_zval_from_long(zend_get_scanned_file_offset()));
 			  zend_stop_lexing();")
-    "(let ((r)) (setq r (ZEND_AST_CREATE 'ZEND_AST_HALT_COMPILER (ZEND_AST_CREATE_ZVAL_FROM_LONG (ZEND_GET_SCANNED_FILE_OFFSET))))(ZEND_STOP_LEXING) r)"
+    "(let ((r)) (setq r (zend_ast_create 'ZEND_AST_HALT_COMPILER (zend_ast_create_zval_from_long (zend_get_scanned_file_offset))))(zend_stop_lexing) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 2")
 
@@ -121,7 +122,7 @@
 			zend_lex_tstring(&zv);
 			$$ = zend_ast_create_zval(&zv);
 ")
-    "(let ((r)(zv)) (ZEND_LEX_TSTRING (lambda(return) (setq zv return)))(setq r (ZEND_AST_CREATE_ZVAL zv)) r)"
+    "(let ((r)(zv)) (zend_lex_tstring (lambda(return) (setq zv return)))(setq r (zend_ast_create_zval zv)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 3")
 
@@ -129,7 +130,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_ast_list_add($1, $3); ")
-    "(let ((r)) (setq r (ZEND_AST_LIST_ADD $1 $3)) r)"
+    "(let ((r)) (setq r (zend_ast_list_add $1 $3)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 4")
 
@@ -138,7 +139,7 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = NULL; zend_throw_exception(zend_ce_compile_error,
 			      \"__HALT_COMPILER() can only be used from the outermost scope\", 0); YYERROR; ")
-    "(let ((r)) (setq r nil)(ZEND_THROW_EXCEPTION zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0)(setq r 'YYERROR) r)"
+    "(let ((r)) (setq r nil)(zend_throw_exception zend_ce_compile_error \"__HALT_COMPILER() can only be used from the outermost scope\" 0)(setq r 'YYERROR) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 5")
 
@@ -147,14 +148,14 @@
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_ast_create_decl(ZEND_AST_METHOD, $3 | $1 | $12, $2, $5,
 				  zend_ast_get_str($4), $7, NULL, $11, $9); CG(extra_fn_flags) = $10; ")
-    "(let ((r)) (setq r (ZEND_AST_CREATE_DECL 'ZEND_AST_METHOD (logior $3 (logior $1 $12)) $2 $5 (ZEND_AST_GET_STR $4) $7 nil $11 $9))(CG 'extra_fn_flags $10) r)"))
+    "(let ((r)) (setq r (zend_ast_create_decl 'ZEND_AST_METHOD (logior $3 (logior $1 $12)) $2 $5 (zend_ast_get_str $4) $7 nil $11 $9))(cg 'extra_fn_flags $10) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 6")
 
   (should
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      " $$ = zend_add_class_modifier($1, $2); if (!$$) { YYERROR; }")
-    "(let ((r)) (setq r (ZEND_ADD_CLASS_MODIFIER $1 $2))(if (not r) (setq r 'YYERROR)) r)"))
+    "(let ((r)) (setq r (zend_add_class_modifier $1 $2))(if (not r) (setq r 'YYERROR)) r)"))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 7")
 
   (should
@@ -179,7 +180,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "if (!zend_handle_encoding_declaration($3)) { YYERROR; }")
-    "(let ((r)) (if (not (ZEND_HANDLE_ENCODING_DECLARATION $3)) (setq r 'YYERROR)) r)"
+    "(let ((r)) (if (not (zend_handle_encoding_declaration $3)) (setq r 'YYERROR)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 10")
 
@@ -187,7 +188,7 @@
    (equal
     (emacs-wisent-grammar-converter--reformat-logic-block
      "$<num>$ = CG(zend_lineno);")
-    "(let ((r)) (setq r (CG zend_lineno)) r)"
+    "(let ((r)) (setq r (cg zend_lineno)) r)"
     ))
   (message "Passed Bison-C to Wisent-Emacs Lisp test 11")
 
