@@ -194,11 +194,12 @@
                             (setq quote-end (point))
                             (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)))
 
-                            ;; Optionally replace terminal with user-specified non-terminal here
-                            (when terminal-replacements
-                              (if (gethash quote terminal-replacements)
-                                  (setq quote (gethash quote terminal-replacements))
-                                (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
+                            ;; Replace terminal with user-specified non-terminal here
+                            (if terminal-replacements
+                                (if (gethash quote terminal-replacements)
+                                    (setq quote (gethash quote terminal-replacements))
+                                  (signal 'error (list (format "Lacking a terminal-replacement for: %s" quote))))
+                              (signal 'error (list (format "Lacking a terminal-replacement for: %s" quote))))
 
                             (when (> rule-token-count 0)
                               (setq rule (concat rule " ")))
