@@ -3,8 +3,8 @@
 ;; Author: Christian Johansson <christian@cvj.se>
 ;; Maintainer: Christian Johansson <christian@cvj.se>
 ;; Created: 9 Aug 2018
-;; Modified: 3 Jul 2020
-;; Version: 0.2.3
+;; Modified: 7 Jul 2020
+;; Version: 0.2.4
 ;; Keywords: tools, convenience
 ;; URL: https://github.com/cjohansson/emacs-wisent-grammar-converter
 
@@ -307,7 +307,12 @@
         (setq header-string (buffer-string))))
 
     (let ((buffer-string
-           (emacs-wisent-grammar-convert--parse-buffer buffer header-string prefix terminal-replacements macro-list)))
+           (emacs-wisent-grammar-convert--parse-buffer
+            buffer
+            header-string
+            prefix
+            terminal-replacements
+            macro-list)))
       (write-file destination)
       (kill-buffer)
       buffer-string)))

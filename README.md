@@ -8,18 +8,26 @@ I was about creating a Emacs PHP mode with full semantic support and there is a 
 
 After a while I though maybe other people could find this useful as well so I started this project.
 
+## Sub-problems
+
+* YACC used C-code in the rules, this needs to be converted to Emacs-Lisp. I solved this by using a shift/reduce parser.
+* YACC uses `$$` as return-value for each rule. I solved this by changing the structure of code to `(let ((r)) ... r)` to always return the equivalence of `$$`
+* YACC supports terminals in rules but Wisent does not. I solved this by passing a hash-list of terminal-replacements that the user needs to specify to replace stuff like `'}'` into `CLOSE_CURLY_BRACKET`
+* By using macros for some functions and ordinary functions for others, it easier to implement a grammar. I solved this by passing a macro-list hash-list argument that specifies what functions are to be used as macros and what are to be used as functions.
+
 ## Main Goal
 
-1. Convert PHP Language YACC Grammar to valid Wisent Grammar
+1. Convert PHP Language YACC Grammar to valid Wisent Grammar (Completed)
 
-## Example conversion of PHP Yacc
+## Example conversion of PHP YACC from emacs-phps-mode
 
 ``` emacs-lisp
 (let ((php-yacc-url "https://raw.githubusercontent.com/php/php-src/master/Zend/zend_language_parser.y")
       (php-yacc-file (expand-file-name "zend_language_parser.y"))
-      (wisent-destination (expand-file-name "../phps-mode-parser-grammar-raw.wy"))
+      (wisent-destination (expand-file-name "../phps-mode-parser.wy"))
       (header (expand-file-name "phps-mode-automation-header.wy"))
-      (terminal-replacements (make-hash-table :test 'equal)))
+      (terminal-replacements (make-hash-table :test 'equal))
+      (macro-list (make-hash-table :test 'equal)))
 
   (puthash "'+'" "ADDITION" terminal-replacements)
   (puthash "'='" "ASSIGN" terminal-replacements)
@@ -51,7 +59,21 @@ After a while I though maybe other people could find this useful as well so I st
   (puthash "'-'" "SUBTRACTION" terminal-replacements)
   (puthash "'~'" "UNARY" terminal-replacements)
 
-  ;; Download Yacc if not available
+  (puthash "zend_ast_create" t macro-list)
+  (puthash "zend_ast_create_assign_op" t macro-list)
+  (puthash "zend_ast_create_binary_op" t macro-list)
+  (puthash "zend_ast_create_cast" t macro-list)
+  (puthash "zend_ast_create_class_const_or_name" t macro-list)
+  (puthash "zend_ast_create_ex" t macro-list)
+  (puthash "zend_ast_create_list" t macro-list)
+  (puthash "zend_ast_create_zval" t macro-list)
+  (puthash "zend_ast_list_add" t macro-list)
+  (puthash "zend_ast_list_rtrim" t macro-list)
+  (puthash "zend_lex_tstring" t macro-list)
+  (puthash "zend_negate_num_string" t macro-list)
+  (puthash "zval_interned_str" t macro-list)
+
+  ;; download Yacc if not available
   (unless (file-exists-p php-yacc-file)
     (message "Downloading PHP Yacc grammar..")
     (url-copy-file php-yacc-url php-yacc-file t t)
@@ -65,7 +87,8 @@ After a while I though maybe other people could find this useful as well so I st
        wisent-destination
        header
        "phps-mode-parser--"
-       terminal-replacements)
+       terminal-replacements
+       macro-list)
     (display-warning
      'warning
      "Missing emacs-wisent-grammar-converter!"))
