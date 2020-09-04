@@ -33,7 +33,7 @@
   "Current root token id.")
 
 (defun emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp (tokens &optional namespace macro-list)
-  "Convert Bison grammar TOKENS into emacs-lisp using parser for each statement."
+  "Convert Bison grammar TOKENS into emacs-lisp using parser for each statement.  Use optional NAMESPACE and MACRO-LIST."
   (setq emacs-wisent-grammar-converter-parser--tokens-stack tokens)
 
   ;; Set default value for namespace
@@ -164,7 +164,7 @@
     (format "%s r)" return-string)))
 
 (defun emacs-wisent-grammar-converter-parser--variable (name namespace macro-list)
-  "Parse variable NAME in NAMESPACE."
+  "Parse variable NAME in NAMESPACE with MACRO-LIST."
   (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
          (token-id (car token)))
     (pcase token-id
@@ -192,7 +192,7 @@
       (_ (signal 'error (list (format "Unexpected variable token %s, remaining tokens: %s" token emacs-wisent-grammar-converter-parser--tokens-stack)))))))
 
 (defun emacs-wisent-grammar-converter-parser--parameter (name namespace macro-list)
-  "Parse parameter NAME in NAMESPACE."
+  "Parse parameter NAME in NAMESPACE and MACRO-LIST."
   (let* ((token (pop emacs-wisent-grammar-converter-parser--tokens-stack))
          (token-id (car token)))
     (pcase token-id
@@ -215,7 +215,7 @@
       (_ (signal 'error (list (format "Unexpected parameter token %s" token)))))))
 
 (defun emacs-wisent-grammar-converter-parser--return (namespace macro-list)
-  "Parse return in NAMESPACE."
+  "Parse return in NAMESPACE and MACRO-LIST."
   (let ((return-string "")
         (continue t))
     (while (and
@@ -269,7 +269,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--function (name namespace macro-list)
-  "Parse function NAME and NAMESPACE."
+  "Parse function NAME and NAMESPACE and MACRO-LIST."
   ;; Skip first OPEN_PARENTHESIS token
   (pop emacs-wisent-grammar-converter-parser--tokens-stack)
 
@@ -418,7 +418,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--function-arguments (namespace macro-list)
-  "Parse function arguments starting at TOKEN with NAMESPACE."
+  "Parse function arguments starting at TOKEN with NAMESPACE and MACRO-LIST."
   (let ((return-string "")
         (return-count 0)
         (continue t)
@@ -491,7 +491,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--infix-token-value (namespace first-token-value macro-list)
-  "Return infix value of first-token-value in NAMESPACE."
+  "Return infix value of first-token-value in NAMESPACE, FIRST-TOKEN-VALUE and MACRO-LIST."
   (let ((return-string "")
         (continue t)
         (in-subtraction nil)
@@ -569,7 +569,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--token-value (namespace &optional token macro-list)
-  "Return TOKEN value."
+  "Return NAMESAPCE with TOKEN and MACRO-LIST."
   (let ((return-string ""))
     (unless token
       (setq

@@ -56,8 +56,8 @@
   "Trim STRING from white-space."
   (replace-regexp-in-string "[\n\t\\ ]+$" "" string))
 
-(defun emacs-wisent-grammar-convert--parse-buffer (buffer &optional header-string prefix terminal-replacements macro-list)
-  "Convert buffer grammar, prepend HEADER-string if specified, use PREFIX if specified.  Return the conversion as a string."
+(defun emacs-wisent-grammar-converter--parse-buffer (buffer &optional header-string prefix macro-list)
+  "Convert BUFFER grammar, optionally prepend HEADER-STRING, use PREFIX and MACRO-LIST.  Return the conversion as a string."
   (switch-to-buffer buffer)
 
   ;; Remove unnecessary starting and ending stuff
@@ -192,15 +192,7 @@
                       (if (search-forward-regexp "\'" nil t)
                           (progn
                             (setq quote-end (point))
-                            (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)))
-
-                            ;; Replace terminal with user-specified non-terminal here
-                            (if terminal-replacements
-                                (if (gethash quote terminal-replacements)
-                                    (setq quote (gethash quote terminal-replacements))
-                                  (signal 'error (list (format "Lacking a terminal-replacement for: %s" quote))))
-                              (signal 'error (list (format "Lacking a terminal-replacement for: %s" quote))))
-
+                            (setq quote (concat "'" (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)) "'"))
                             (when (> rule-token-count 0)
                               (setq rule (concat rule " ")))
                             (setq rule (concat rule quote))
@@ -216,16 +208,8 @@
                           (quote))
                       (if (search-forward-regexp "\"" nil t)
                           (progn
-                            
                             (setq quote-end (point))
-                            (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)))
-
-                            ;; Optionally replace terminal with user-specified non-terminal here
-                            (when terminal-replacements
-                              (if (gethash quote terminal-replacements)
-                                  (setq quote (gethash quote terminal-replacements))
-                                (message "Failed to find non-terminal \"%s\" in terminal-replacements table." quote)))
-
+                            (setq quote (concat "'" (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)) "'"))
                             (when (> rule-token-count 0)
                               (setq rule (concat rule " ")))
                             (setq rule (concat rule quote))
@@ -294,8 +278,8 @@
     ;; Return current buffer as string
     (buffer-string)))
 
-(defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header-file prefix terminal-replacements macro-list)
-  "Convert grammar in SOURCE to DESTINATION, prepend HEADER-FILE if specified, use PREFIX if specified.  Return the conversion as a string."
+(defun emacs-wisent-grammar-converter--generate-grammar-from-filename (source destination &optional header-file prefix macro-list)
+  "Convert grammar in SOURCE to DESTINATION, prepend HEADER-FILE if specified, use PREFIX and MACRO-LIST if specified.  Return the conversion as a string."
   (let* ((buffer (generate-new-buffer "*Converted Grammar*"))
          (header-string))
     (switch-to-buffer buffer)
@@ -307,11 +291,10 @@
         (setq header-string (buffer-string))))
 
     (let ((buffer-string
-           (emacs-wisent-grammar-convert--parse-buffer
+           (emacs-wisent-grammar-converter--parse-buffer
             buffer
             header-string
             prefix
-            terminal-replacements
             macro-list)))
       (write-file destination)
       (kill-buffer)

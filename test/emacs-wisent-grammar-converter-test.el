@@ -35,19 +35,18 @@
 
 (message "\nUnit tests for integration started\n")
 
-(defun emacs-wisent-grammar-converter-test--parse-string (string &optional header-string prefix terminal-replacements macro-list)
-  "Run `emacs-wisent-grammar-convert--parse-buffer' from string."
+(defun emacs-wisent-grammar-converter-test--parse-string (string &optional header-string prefix macro-list)
+  "Run `emacs-wisent-grammar-converter--parse-buffer' from string."
   (let ((buffer (generate-new-buffer "*Parser Test*"))
         (buffer-string))
     (switch-to-buffer buffer)
     (insert string)
     (setq
      buffer-string
-     (emacs-wisent-grammar-convert--parse-buffer
+     (emacs-wisent-grammar-converter--parse-buffer
       buffer
       header-string
       prefix
-      terminal-replacements
       macro-list))
     (kill-buffer)
     buffer-string))
