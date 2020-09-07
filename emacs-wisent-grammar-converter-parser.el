@@ -58,7 +58,7 @@
                (unless (string= token-value "")
                  (push token-value declaration-items))
                (setq in-declaration nil))
-              ((or 'SEMICOLON)
+              ('SEMICOLON
                (setq in-declaration nil)))))
          ((equal (car item) 'DECLARATION)
           (setq in-declaration t)))))
@@ -569,7 +569,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--token-value (namespace &optional token macro-list)
-  "Return NAMESAPCE with TOKEN and MACRO-LIST."
+  "Return NAMESPACE with TOKEN and MACRO-LIST."
   (let ((return-string ""))
     (unless token
       (setq
@@ -678,7 +678,7 @@
 
 ;; This function supports stuff like ->attr = abc; ->attr) ->attr, ->attr;
 (defun emacs-wisent-grammar-converter-parser--member-operator (parent namespace macro-list)
-  "Parse member-operator of PARENT using NAMESPACE."
+  "Parse member-operator of PARENT using NAMESPACE and MACRO-LIST."
   (let ((continue t)
         (return-string "")
         (variable ""))
@@ -751,7 +751,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--if (namespace macro-list)
-  "Parser for IF statments in NAMESPACE."
+  "Parser for IF statments in NAMESPACE and use MACRO-LIST."
   (let ((continue t)
         (condition-string "")
         (condition-subject-string "")
@@ -865,7 +865,7 @@
      body-string)))
 
 (defun emacs-wisent-grammar-converter-parser--if-body (namespace macro-list)
-  "Parse IF-body in NAMESPACE."
+  "Parse IF-body in NAMESPACE and use MACRO-LIST."
   (let ((return-string "")
         (continue t)
         (square-bracket-level 0))
@@ -954,7 +954,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--if-body-inline (namespace macro-list)
-  "Parse IF-body-inline in NAMESPACE."
+  "Parse IF-body-inline in NAMESPACE and use MACRO-LIST."
   (let ((return-string "")
         (continue t))
     (while (and
@@ -1034,7 +1034,7 @@
     return-string))
 
 (defun emacs-wisent-grammar-converter-parser--logical-infix (subject-string namespace operator macro-list)
-  "Parse logical infix between SUBJECT with infix in NAMESPACE"
+  "Parse logical infix between SUBJECT-STRING with infix in NAMESPACE and OPERATOR, use MACRO-LIST."
   (let ((subject2-string)
         (continue t)
         (operator-string ""))
@@ -1065,7 +1065,7 @@
      subject2-string)))
 
 (defun emacs-wisent-grammar-converter-parser--logical-prefix (namespace macro-list)
-  "Parse logical prefix expression OPERATOR in NAMESPACE."
+  "Parse logical prefix expression OPERATOR in NAMESPACE and use MACRO-LIST."
   (let ((continue t)
         (return-string "")
         (return-count 0)

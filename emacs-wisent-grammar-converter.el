@@ -192,7 +192,7 @@
                       (if (search-forward-regexp "\'" nil t)
                           (progn
                             (setq quote-end (point))
-                            (setq quote (concat "'" (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)) "'"))
+                            (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end)))
                             (when (> rule-token-count 0)
                               (setq rule (concat rule " ")))
                             (setq rule (concat rule quote))
@@ -209,7 +209,7 @@
                       (if (search-forward-regexp "\"" nil t)
                           (progn
                             (setq quote-end (point))
-                            (setq quote (concat "'" (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)) "'"))
+                            (setq quote (emacs-wisent-grammar-converter--string-trim (buffer-substring (- quote-start 1) quote-end 1)))
                             (when (> rule-token-count 0)
                               (setq rule (concat rule " ")))
                             (setq rule (concat rule quote))

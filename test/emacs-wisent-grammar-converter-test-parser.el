@@ -31,7 +31,7 @@
 (message "\nUnit tests for parser started\n")
 
 (defun emacs-wisent-grammar-converter-test-parser--converted-lexer-tokens-to-lisp ()
-  "Test `emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp'"
+  "Test `emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp'."
   (should (equal
            (emacs-wisent-grammar-converter-parser--converted-lexer-tokens-to-lisp
             (list
